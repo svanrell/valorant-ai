@@ -45,9 +45,7 @@ export class AgentsService {
   ) {}
 
   loadAgents(): Observable<Agent[]> {
-    const apiUrl =
-      this.configService.get<string>("VALORANT_API_URL") ||
-      "https://valorant-api.com/v1/agents";
+    const apiUrl = "https://valorant-api.com/v1/agents";
 
     return this.httpService.get<ValorantApiResponse>(apiUrl).pipe(
       map((response: AxiosResponse<ValorantApiResponse>) => {
