@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
-import { ConfigService } from "@nestjs/config";
 import { map, Observable, tap } from "rxjs";
 import { AxiosResponse } from "axios";
 import { saveToCsv } from "../utils/csv-helper";
@@ -39,10 +38,7 @@ export interface Agent {
 
 @Injectable()
 export class AgentsService {
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly httpService: HttpService) { }
 
   loadAgents(): Observable<Agent[]> {
     const apiUrl = "https://valorant-api.com/v1/agents";
@@ -68,18 +64,18 @@ export class AgentsService {
             isPlayableCharacter: agent.isPlayableCharacter,
             role: agent.role
               ? {
-                  displayName: agent.role.displayName,
-                  description: agent.role.description,
-                  displayIcon: agent.role.displayIcon,
-                }
+                displayName: agent.role.displayName,
+                description: agent.role.description,
+                displayIcon: agent.role.displayIcon,
+              }
               : null,
             abilities: agent.abilities
               ? agent.abilities.map((ability) => ({
-                  slot: ability.slot,
-                  displayName: ability.displayName,
-                  description: ability.description,
-                  displayIcon: ability.displayIcon,
-                }))
+                slot: ability.slot,
+                displayName: ability.displayName,
+                description: ability.description,
+                displayIcon: ability.displayIcon,
+              }))
               : [],
           };
         });
