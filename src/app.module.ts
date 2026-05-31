@@ -17,6 +17,8 @@ import { MatchesController } from "./valorant_api/matches/matches.controller";
 import { MatchesService } from "./valorant_api/matches/matches.service";
 import { ContentController } from "./valorant_api/content/content.controller";
 import { ContentService } from "./valorant_api/content/content.service";
+import { ValorantGateway } from "./gateway/valorant.gateway";
+import { ValorantLocalService } from "./gateway/valorant-local.service";
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { ContentService } from "./valorant_api/content/content.service";
     GameModesService,
     MatchesService,
     ContentService,
+    ValorantGateway,
+    ValorantLocalService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

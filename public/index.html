@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Radar LoadoutAi</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f1923;
+            color: white;
+            transition: background-color 0.5s ease;
+        }
+
+        #contenedor-estado {
+            text-align: center;
+            padding: 40px;
+            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid transparent;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 3rem;
+            text-transform: uppercase;
+        }
+
+        p {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #ece8e1;
+            opacity: 0.8;
+        }
+
+        .estado-cerrado {
+            border-color: #555 !important;
+        }
+
+        .estado-cerrado h1 {
+            color: #888;
+        }
+
+        .estado-menu {
+            border-color: #00ffcc !important;
+        }
+
+        .estado-menu h1 {
+            color: #00ffcc;
+        }
+
+        .estado-pregame {
+            border-color: #ff4655 !important;
+            background: rgba(255, 70, 85, 0.1) !important;
+        }
+
+        .estado-pregame h1 {
+            color: #ff4655;
+        }
+
+        .estado-ingame {
+            border-color: #00ff88 !important;
+            background: rgba(0, 255, 136, 0.1) !important;
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+
+        .estado-ingame h1 {
+            color: #00ff88;
+        }
+
+        #overlay-compra {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(15, 25, 35, 0.95);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.25);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #overlay-compra.oculto {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+        }
+
+        #cerrar-overlay {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        #cerrar-overlay:hover {
+            color: #ff4655;
+        }
+
+        .fase-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .pulso-verde {
+            width: 8px;
+            height: 8px;
+            background-color: #00ff88;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #00ff88;
+            animation: pulse-green 1.5s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(0, 255, 136, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+            }
+        }
+
+        #overlay-ronda {
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        #overlay-compra h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .estado-compra {
+            margin: 4px 0 15px 0;
+            font-size: 0.95rem;
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .timer-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cca3);
+            transition: width 1s linear;
+        }
+
+        #timer-texto {
+            font-size: 0.85rem;
+            color: #ccc;
+            text-align: right;
+            margin-bottom: 15px;
+        }
+
+        .recomendacion-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid #00ff88;
+            padding: 10px;
+            border-radius: 0 6px 6px 0;
+        }
+
+        .recomendacion-box strong {
+            font-size: 0.85rem;
+            color: #00ff88;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .recomendacion-box p {
+            font-size: 0.85rem !important;
+            margin: 0;
+            opacity: 0.9;
+            color: #ece8e1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="contenedor-estado" class="estado-cerrado">
+        <h1 id="texto-estado">JUEGO CERRADO</h1>
+        <p id="texto-detalle">Esperando a que inicies Valorant...</p>
+    </div>
+
+    <div id="overlay-compra" class="oculto">
+        <button id="cerrar-overlay" onclick="ocultarOverlay()">&times;</button>
+        <div class="fase-header">
+            <span class="pulso-verde"></span>
+            <span id="overlay-ronda">RONDA -</span>
+        </div>
+        <h2>FASE DE COMPRA</h2>
+        <p class="estado-compra">¡COMPRA DISPONIBLE!</p>
+        
+        <div class="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+        <div id="timer-texto">0s restantes</div>
+
+        <div class="recomendacion-box">
+            <strong>Recomendación IA:</strong>
+            <p id="recomendacion-texto">Analizando economía...</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:3000');
+
+        const contenedor = document.getElementById('contenedor-estado');
+        const titulo = document.getElementById('texto-estado');
+        const detalle = document.getElementById('texto-detalle');
+
+        socket.on('estado_valorant', (data) => {
+            console.log("Nuevo estado recibido:", data);
+            contenedor.className = '';
+
+            if (data.estado === 'CERRADO') {
+                contenedor.classList.add('estado-cerrado');
+                titulo.innerText = 'JUEGO CERRADO';
+                detalle.innerText = 'Esperando a que inicies Valorant...';
+            }
+            else if (data.estado === 'MENU') {
+                contenedor.classList.add('estado-menu');
+                titulo.innerText = 'EN EL MENÚ';
+                detalle.innerText = 'Buscando partida o en la sala inicial...';
+            }
+            else if (data.estado === 'PREGAME') {
+                contenedor.classList.add('estado-pregame');
+                titulo.innerText = '¡SELECCIÓN DE AGENTE!';
+                detalle.innerText = `Match ID: ${data.matchId}`;
+            }
+            else if (data.estado === 'INGAME') {
+                contenedor.classList.add('estado-ingame');
+                titulo.innerText = '¡EN PARTIDA!';
+                detalle.innerText = `Jugando en ${data.mapa || 'Mapa Desconocido'} (${data.modo || 'Modo Desconocido'})`;
+            }
+        });
+
+        socket.on('connect', () => console.log('Conectado al servidor LoadoutAi'));
+        socket.on('disconnect', () => {
+            titulo.innerText = 'SIN CONEXIÓN';
+            detalle.innerText = 'El servidor NestJS está apagado.';
+            contenedor.className = 'estado-cerrado';
+            overlayCompra.classList.add('oculto');
+        });
+
+        const overlayCompra = document.getElementById('overlay-compra');
+        const overlayRonda = document.getElementById('overlay-ronda');
+        const timerBar = document.getElementById('timer-bar');
+        const timerTexto = document.getElementById('timer-texto');
+        const recomendacionTexto = document.getElementById('recomendacion-texto');
+
+        let maxTime = 30;
+        let overlayManualCerrado = false;
+
+        socket.on('fase_compra', (data) => {
+            console.log("Evento fase_compra recibido:", data);
+            
+            if (data.disponible) {
+                if (data.tiempo === 30 || data.tiempo === 45) {
+                    overlayManualCerrado = false;
+                    maxTime = data.tiempo;
+                }
+
+                if (!overlayManualCerrado) {
+                    overlayCompra.classList.remove('oculto');
+                    overlayRonda.innerText = `RONDA ${data.ronda}`;
+                    timerTexto.innerText = `${data.tiempo}s restantes`;
+                    
+                    const porcentaje = (data.tiempo / maxTime) * 100;
+                    timerBar.style.width = `${porcentaje}%`;
+
+                    if (data.ronda === 1 || data.ronda === 13) {
+                        recomendacionTexto.innerText = "Ronda de pistolas: Compra Escudo Ligero + Habilidades o Ghost.";
+                    } else if (data.ronda === 2 || data.ronda === 14) {
+                        recomendacionTexto.innerText = "Eco / Compra forzada: Spectre si ganaste la ronda anterior, pistolas en eco si perdiste.";
+                    } else if (data.ronda >= 25) {
+                        recomendacionTexto.innerText = "PRÓRROGA: ¡Compra todo lo que puedas! Todo o nada.";
+                    } else {
+                        recomendacionTexto.innerText = "Compra Completa: Vandal/Phantom + Escudo Pesado + Habilidades completas.";
+                    }
+                }
+            } else {
+                overlayCompra.classList.add('oculto');
+            }
+        });
+
+        function ocultarOverlay() {
+            overlayManualCerrado = true;
+            overlayCompra.classList.add('oculto');
+        }
+    </script>
+</body>
+
+</html>
