@@ -21,10 +21,10 @@ const MAPS_MAP: Record<string, string> = {
 };
 
 const QUEUES_MAP: Record<string, string> = {
-    'unrated': 'No Clasificatoria (Unrated)',
-    'competitive': 'Competitivo (Ranked)',
+    'unrated': 'No Clasificatoria',
+    'competitive': 'Competitivo',
     'swiftplay': 'Swiftplay',
-    'spikerush': 'Fiebre de la Espiga',
+    'spikerush': 'Fiebre de la Spike',
     'deathmatch': 'Deathmatch',
     'ggteam': 'Carrera de Armas',
 };
@@ -113,9 +113,9 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
                 const decodedJson = Buffer.from(miPresencia.private, 'base64').toString('utf8');
                 const privateData = JSON.parse(decodedJson);
 
-                const loopState = 
-                    privateData.matchPresenceData?.sessionLoopState || 
-                    privateData.partyPresenceData?.partyOwnerSessionLoopState || 
+                const loopState =
+                    privateData.matchPresenceData?.sessionLoopState ||
+                    privateData.partyPresenceData?.partyOwnerSessionLoopState ||
                     privateData.sessionLoopState;
 
                 if (loopState === 'PREGAME') {
