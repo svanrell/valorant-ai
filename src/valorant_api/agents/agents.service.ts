@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import { map, Observable, tap } from "rxjs";
 import { AxiosResponse } from "axios";
-import { saveToCsv } from "../utils/csv-helper";
+import { saveToCsv } from "../../utils/csv-helper";
 
 interface ValorantApiResponse {
   status: number;

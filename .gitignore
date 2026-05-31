@@ -42,3 +42,4 @@ lerna-debug.log*
 
 # Local datasets or generated data
 /infoApi
+/contenido

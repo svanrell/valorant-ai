@@ -3,7 +3,7 @@ import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
 import { map, Observable, tap } from "rxjs";
 import { AxiosResponse } from "axios";
-import { saveToCsv } from "../utils/csv-helper";
+import { saveToCsv } from "../../utils/csv-helper";
 
 export interface LocalizedNamesDto {
   "ar-AE"?: string;

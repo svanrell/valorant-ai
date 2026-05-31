@@ -3,7 +3,7 @@ import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
 import { map, Observable, tap, switchMap } from "rxjs";
 import { AxiosResponse } from "axios";
-import { saveToCsv, appendToCsv } from "../utils/csv-helper";
+import { saveToCsv, appendToCsv } from "../../utils/csv-helper";
 import { ContentService } from "../content/content.service";
 
 export interface PlayerDto {
