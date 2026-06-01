@@ -21,8 +21,9 @@ export class ValorantGateway implements OnGatewayConnection {
   server: Server;
 
   private currentStatus: string = "CLOSED";
-  private extraData: any = {};
-  private buyPhaseStatus: any = { available: false, time: 0, round: 0 };
+  private extraData: Record<string, unknown> = {};
+  private buyPhaseStatus: { available: boolean; time: number; round: number } =
+    { available: false, time: 0, round: 0 };
 
   constructor(
     private readonly contentService: ContentService,
@@ -39,7 +40,7 @@ export class ValorantGateway implements OnGatewayConnection {
     client.emit("buy_phase", this.buyPhaseStatus);
   }
 
-  updateStatus(status: string, data: any = {}) {
+  updateStatus(status: string, data: Record<string, unknown> = {}) {
     this.currentStatus = status;
     this.extraData = data;
     if (this.server) {
@@ -107,10 +108,12 @@ export class ValorantGateway implements OnGatewayConnection {
         weapons,
         message: "All data loaded successfully",
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.server.emit("load_error", {
         message: "Failed to load data",
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
@@ -120,10 +123,12 @@ export class ValorantGateway implements OnGatewayConnection {
     try {
       const content = await firstValueFrom(this.contentService.loadContent());
       this.server.emit("content_loaded", content);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.server.emit("load_error", {
         message: "Failed to load content",
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
@@ -133,10 +138,12 @@ export class ValorantGateway implements OnGatewayConnection {
     try {
       const agents = await firstValueFrom(this.agentsService.loadAgents());
       this.server.emit("agents_loaded", agents);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.server.emit("load_error", {
         message: "Failed to load agents",
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
@@ -146,10 +153,12 @@ export class ValorantGateway implements OnGatewayConnection {
     try {
       const maps = await firstValueFrom(this.mapsService.loadMaps());
       this.server.emit("maps_loaded", maps);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.server.emit("load_error", {
         message: "Failed to load maps",
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
@@ -159,10 +168,12 @@ export class ValorantGateway implements OnGatewayConnection {
     try {
       const weapons = await firstValueFrom(this.weaponsService.loadWeapons());
       this.server.emit("weapons_loaded", weapons);
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       this.server.emit("load_error", {
         message: "Failed to load weapons",
-        error: error.message,
+        error: errorMessage,
       });
     }
   }
