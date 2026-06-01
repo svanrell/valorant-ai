@@ -43,3 +43,7 @@ lerna-debug.log*
 # Local datasets or generated data
 /infoApi
 /contenido
+
+# Documentation
+pregame_documentation.md
+

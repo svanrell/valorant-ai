@@ -260,8 +260,35 @@
             font-size: 0.7rem;
             color: rgba(255, 255, 255, 0.4);
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 2px;
             letter-spacing: 1px;
+        }
+
+        .player-level {
+            font-size: 0.75rem;
+            color: #00ffcc;
+            font-weight: 600;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .player-rank-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            color: #ffb703;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pregame-rank-icon {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
         }
 
         .pregame-agent-icon {
@@ -371,6 +398,7 @@
         const details = document.getElementById('detail-text');
 
         let agentsMap = {};
+        let ranksMap = {};
 
         async function loadAgents() {
             try {
@@ -389,7 +417,26 @@
             }
         }
 
+        async function loadRanks() {
+            try {
+                const response = await fetch('https://valorant-api.com/v1/competitivetiers');
+                const result = await response.json();
+                if (result.status === 200 && result.data.length > 0) {
+                    const latestTierSet = result.data[result.data.length - 1];
+                    latestTierSet.tiers.forEach(tierObj => {
+                        ranksMap[tierObj.tier] = {
+                            name: tierObj.tierName,
+                            icon: tierObj.largeIcon
+                        };
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load rank assets:", err);
+            }
+        }
+
         loadAgents();
+        loadRanks();
 
         function renderPregamePlayers(players) {
             const pregameContainer = document.getElementById('pregame-team-container');
@@ -405,6 +452,15 @@
             players.forEach((player, index) => {
                 const card = document.createElement('div');
                 card.className = 'pregame-card';
+                
+                // Aplicar fondo dinámico con la tarjeta del jugador
+                if (player.playerCardId) {
+                    card.style.backgroundImage = `linear-gradient(rgba(15, 25, 35, 0.85), rgba(15, 25, 35, 0.95)), url(https://media.valorant-api.com/playercards/${player.playerCardId}/wideart.png)`;
+                    card.style.backgroundSize = 'cover';
+                    card.style.backgroundPosition = 'center';
+                } else {
+                    card.style.backgroundImage = 'none';
+                }
                 
                 const agentId = (player.agentId || '').toLowerCase();
                 const selectionState = player.state; // "", "selected", "locked"
@@ -435,8 +491,22 @@
                     badgeClass = 'badge-locked';
                 }
                 
+                let rankHtml = '<div class="player-rank-container"><span>Sin Rango</span></div>';
+                if (player.rank !== undefined && ranksMap[player.rank]) {
+                    const rankInfo = ranksMap[player.rank];
+                    rankHtml = `
+                        <div class="player-rank-container">
+                            ${rankInfo.icon ? `<img src="${rankInfo.icon}" class="pregame-rank-icon" alt="${rankInfo.name}">` : ''}
+                            <span>${rankInfo.name}</span>
+                        </div>
+                    `;
+                }
+
+                const levelText = player.level ? `Nivel ${player.level}` : 'Nivel -';
                 card.innerHTML = `
                     <div class="player-number">ALIADO ${index + 1}</div>
+                    <div class="player-level">${levelText}</div>
+                    ${rankHtml}
                     ${agentIconHtml}
                     <div class="pregame-agent-name">${agentName}</div>
                     <div class="pregame-status-badge ${badgeClass}">${badgeText}</div>

@@ -75,6 +75,16 @@ interface PregamePlayer {
   CharacterID: string;
   CharacterSelectionState: string; // "" | "selected" | "locked"
   PregamePlayerState: string;
+  CompetitiveTier: number;
+  PlayerIdentity?: {
+    Subject: string;
+    PlayerCardID: string;
+    PlayerTitleID: string;
+    AccountLevel: number;
+    PreferredLevelBorderID: string;
+    Incognito: boolean;
+    HideAccountLevel: boolean;
+  };
 }
 
 interface PregameMatchResponse {
@@ -260,6 +270,11 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               puuid: p.Subject,
               agentId: p.CharacterID,
               state: p.CharacterSelectionState,
+              level: p.PlayerIdentity?.HideAccountLevel
+                ? null
+                : p.PlayerIdentity?.AccountLevel,
+              rank: p.CompetitiveTier,
+              playerCardId: p.PlayerIdentity?.PlayerCardID,
             }));
 
             this.updateStatus("PREGAME", { matchId, pregameMatchId, players });
