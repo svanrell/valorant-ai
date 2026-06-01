@@ -212,6 +212,125 @@
             opacity: 0.9;
             color: #ece8e1;
         }
+
+        /* Pregame Agent Selection Grid */
+        .pregame-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+            width: 100%;
+            max-width: 800px;
+            transition: all 0.3s ease;
+        }
+
+        .pregame-grid.hidden {
+            display: none;
+        }
+
+        .pregame-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pregame-card.pre-selected {
+            border-color: #00f0ff;
+            background: rgba(0, 240, 255, 0.08);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+            animation: pulse-border 2s infinite alternate;
+        }
+
+        .pregame-card.locked {
+            border-color: #ff4655;
+            background: rgba(255, 70, 85, 0.15);
+            box-shadow: 0 0 15px rgba(255, 70, 85, 0.3);
+        }
+
+        .player-number {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .pregame-agent-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.5);
+            object-fit: cover;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .pregame-agent-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ece8e1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pregame-status-badge {
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge-selecting {
+            background: rgba(255, 255, 255, 0.1);
+            color: #aaa;
+        }
+
+        .badge-prepick {
+            background: rgba(0, 240, 255, 0.2);
+            color: #00f0ff;
+        }
+
+        .badge-locked {
+            background: #ff4655;
+            color: white;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 5px rgba(0, 240, 255, 0.1);
+                border-color: rgba(0, 240, 255, 0.4);
+            }
+            100% {
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+                border-color: rgba(0, 240, 255, 1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .pregame-grid {
+                grid-template-columns: repeat(2, 1fr);
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .pregame-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -220,6 +339,7 @@
     <div id="status-container" class="status-closed">
         <h1 id="status-text">GAME CLOSED</h1>
         <p id="detail-text">Waiting for Valorant to start...</p>
+        <div id="pregame-team-container" class="pregame-grid hidden"></div>
     </div>
 
     <div id="buy-overlay" class="hidden">
@@ -250,9 +370,90 @@
         const title = document.getElementById('status-text');
         const details = document.getElementById('detail-text');
 
+        let agentsMap = {};
+
+        async function loadAgents() {
+            try {
+                const response = await fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true&language=es-ES');
+                const result = await response.json();
+                if (result.status === 200) {
+                    result.data.forEach(agent => {
+                        agentsMap[agent.uuid.toLowerCase()] = {
+                            name: agent.displayName,
+                            icon: agent.displayIcon
+                        };
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load agent assets:", err);
+            }
+        }
+
+        loadAgents();
+
+        function renderPregamePlayers(players) {
+            const pregameContainer = document.getElementById('pregame-team-container');
+            pregameContainer.innerHTML = '';
+            
+            if (!players || players.length === 0) {
+                pregameContainer.classList.add('hidden');
+                return;
+            }
+            
+            pregameContainer.classList.remove('hidden');
+            
+            players.forEach((player, index) => {
+                const card = document.createElement('div');
+                card.className = 'pregame-card';
+                
+                const agentId = (player.agentId || '').toLowerCase();
+                const selectionState = player.state; // "", "selected", "locked"
+                
+                let agentName = 'SELECCIONANDO';
+                let agentIconHtml = `
+                    <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" style="margin-bottom: 10px;">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                `;
+                
+                if (agentId && agentsMap[agentId]) {
+                    agentName = agentsMap[agentId].name;
+                    agentIconHtml = `<img src="${agentsMap[agentId].icon}" class="pregame-agent-icon" alt="${agentName}">`;
+                }
+                
+                let badgeText = 'SELECCIONANDO';
+                let badgeClass = 'badge-selecting';
+                
+                if (selectionState === 'selected') {
+                    card.classList.add('pre-selected');
+                    badgeText = 'PRE-PICK';
+                    badgeClass = 'badge-prepick';
+                } else if (selectionState === 'locked') {
+                    card.classList.add('locked');
+                    badgeText = 'BLOQUEADO';
+                    badgeClass = 'badge-locked';
+                }
+                
+                card.innerHTML = `
+                    <div class="player-number">ALIADO ${index + 1}</div>
+                    ${agentIconHtml}
+                    <div class="pregame-agent-name">${agentName}</div>
+                    <div class="pregame-status-badge ${badgeClass}">${badgeText}</div>
+                `;
+                
+                pregameContainer.appendChild(card);
+            });
+        }
+
         socket.on('valorant_status', (data) => {
             console.log("New status received:", data);
             container.className = '';
+
+            // Ocultar pregame por defecto en otros estados
+            if (data.status !== 'PREGAME') {
+                document.getElementById('pregame-team-container').classList.add('hidden');
+            }
 
             if (data.status === 'CLOSED') {
                 container.classList.add('status-closed');
@@ -268,6 +469,7 @@
                 container.classList.add('status-pregame');
                 title.innerText = 'AGENT SELECTION!';
                 details.innerText = `Match ID: ${data.matchId}`;
+                renderPregamePlayers(data.players);
             }
             else if (data.status === 'INGAME') {
                 container.classList.add('status-ingame');

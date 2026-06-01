@@ -64,6 +64,41 @@ interface ValorantPrivatePresenceData {
   partyOwnerMatchScoreEnemyTeam?: number;
 }
 
+interface PregamePlayerResponse {
+  Subject: string;
+  MatchID: string;
+  Version: number;
+}
+
+interface PregamePlayer {
+  Subject: string;
+  CharacterID: string;
+  CharacterSelectionState: string; // "" | "selected" | "locked"
+  PregamePlayerState: string;
+}
+
+interface PregameMatchResponse {
+  ID: string;
+  Version: number;
+  AllyTeam: {
+    TeamID: string;
+    Players: PregamePlayer[];
+  };
+}
+
+interface EntitlementsTokenResponse {
+  accessToken: string;
+  entitlements: unknown[];
+  token: string;
+}
+
+interface ValorantVersionResponse {
+  status: number;
+  data: {
+    riotClientVersion: string;
+  };
+}
+
 @Injectable()
 export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ValorantLocalService.name);
@@ -170,7 +205,70 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
         if (loopState === "PREGAME") {
           this.clearBuyPhase();
           const matchId = privateData.partyId || "PRESENCE_LOBBY";
-          this.updateStatus("PREGAME", { matchId });
+          try {
+            // 1. Obtener tokens de la API local
+            const tokenRes = await firstValueFrom(
+              this.httpService.get<EntitlementsTokenResponse>(
+                `${credentials.url}/entitlements/v1/token`,
+                config,
+              ),
+            );
+            const accessToken = tokenRes.data.accessToken;
+            const entitlementsToken = tokenRes.data.token;
+
+            // 2. Obtener la versión actual del juego
+            const versionRes = await firstValueFrom(
+              this.httpService.get<ValorantVersionResponse>(
+                "https://valorant-api.com/v1/version",
+              ),
+            );
+            const clientVersion = versionRes.data.data.riotClientVersion;
+
+            // 3. Configurar URL y headers para los servidores remotos GLZ
+            const region = process.env.VALORANT_REGION || "eu";
+            const shard = region === "latam" || region === "br" ? "na" : region;
+            const glzUrl = `https://glz-${region}-1.${shard}.a.pvp.net`;
+
+            const remoteConfig = {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "X-Riot-Entitlements-JWT": entitlementsToken,
+                "X-Riot-ClientVersion": clientVersion,
+                "X-Riot-ClientPlatform":
+                  "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9",
+              },
+            };
+
+            // 4. Buscar el MatchID del pregame del jugador
+            const pregamePlayer = await firstValueFrom(
+              this.httpService.get<PregamePlayerResponse>(
+                `${glzUrl}/pregame/v1/players/${puuid}`,
+                remoteConfig,
+              ),
+            );
+            const pregameMatchId = pregamePlayer.data.MatchID;
+
+            // 5. Obtener los detalles de la fase de selección
+            const pregameMatch = await firstValueFrom(
+              this.httpService.get<PregameMatchResponse>(
+                `${glzUrl}/pregame/v1/matches/${pregameMatchId}`,
+                remoteConfig,
+              ),
+            );
+
+            const players = pregameMatch.data.AllyTeam.Players.map((p) => ({
+              puuid: p.Subject,
+              agentId: p.CharacterID,
+              state: p.CharacterSelectionState,
+            }));
+
+            this.updateStatus("PREGAME", { matchId, pregameMatchId, players });
+          } catch (error) {
+            this.logger.error(
+              `Error querying pregame selection details: ${error instanceof Error ? error.message : String(error)}`,
+            );
+            this.updateStatus("PREGAME", { matchId });
+          }
         } else if (loopState === "INGAME") {
           const mapPath = privateData.matchPresenceData?.matchMap || "";
           const queueId = privateData.matchPresenceData?.queueId || "";
