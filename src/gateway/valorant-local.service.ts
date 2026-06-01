@@ -1,32 +1,37 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ValorantGateway } from './valorant.gateway';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as https from 'https';
-import { firstValueFrom } from 'rxjs';
+import {
+    Injectable,
+    OnModuleInit,
+    OnModuleDestroy,
+    Logger,
+} from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
+import { ValorantGateway } from "./valorant.gateway";
+import * as fs from "fs";
+import * as path from "path";
+import * as https from "https";
+import { firstValueFrom } from "rxjs";
 
 const MAPS_MAP: Record<string, string> = {
-    '/Game/Maps/Ascent/Ascent': 'Ascent',
-    '/Game/Maps/Bonsai/Bonsai': 'Split',
-    '/Game/Maps/Canyon/Canyon': 'Fracture',
-    '/Game/Maps/Duality/Duality': 'Bind',
-    '/Game/Maps/Foxtrot/Foxtrot': 'Breeze',
-    '/Game/Maps/Jam/Jam': 'Lotus',
-    '/Game/Maps/Jamboree/Jamboree': 'Abyss',
-    '/Game/Maps/Pitt/Pitt': 'Pearl',
-    '/Game/Maps/Port/Port': 'Icebox',
-    '/Game/Maps/Rook/Rook': 'Sunset',
-    '/Game/Maps/Triad/Triad': 'Haven',
+    "/Game/Maps/Ascent/Ascent": "Ascent",
+    "/Game/Maps/Bonsai/Bonsai": "Split",
+    "/Game/Maps/Canyon/Canyon": "Fracture",
+    "/Game/Maps/Duality/Duality": "Bind",
+    "/Game/Maps/Foxtrot/Foxtrot": "Breeze",
+    "/Game/Maps/Jam/Jam": "Lotus",
+    "/Game/Maps/Jamboree/Jamboree": "Abyss",
+    "/Game/Maps/Pitt/Pitt": "Pearl",
+    "/Game/Maps/Port/Port": "Icebox",
+    "/Game/Maps/Rook/Rook": "Sunset",
+    "/Game/Maps/Triad/Triad": "Haven",
 };
 
 const QUEUES_MAP: Record<string, string> = {
-    'unrated': 'No Clasificatoria',
-    'competitive': 'Competitivo',
-    'swiftplay': 'Swiftplay',
-    'spikerush': 'Fiebre de la Spike',
-    'deathmatch': 'Deathmatch',
-    'ggteam': 'Carrera de Armas',
+    unrated: "Unrated",
+    competitive: "Competitive",
+    swiftplay: "Swiftplay",
+    spikerush: "Spike Rush",
+    deathmatch: "Deathmatch",
+    ggteam: "Escalation",
 };
 
 @Injectable()
@@ -34,11 +39,11 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(ValorantLocalService.name);
     private readonly lockfilePath: string;
     private readonly httpsAgent: https.Agent;
-    private estadoActual: string = 'CERRADO';
-    private datosExtraActual: any = {};
+    private currentStatus: string = "CLOSED";
+    private currentExtraData: any = {};
     private intervalId: NodeJS.Timeout;
-    private scoreAliado: number = -1;
-    private scoreEnemigo: number = -1;
+    private allyScore: number = -1;
+    private enemyScore: number = -1;
     private buyPhaseSecondsRemaining: number = 0;
     private buyPhaseInterval: NodeJS.Timeout | null = null;
 
@@ -47,36 +52,38 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
         private readonly gateway: ValorantGateway,
     ) {
         this.lockfilePath = path.join(
-            process.env.LOCALAPPDATA || '',
-            'Riot Games',
-            'Riot Client',
-            'Config',
-            'lockfile',
+            process.env.LOCALAPPDATA || "",
+            "Riot Games",
+            "Riot Client",
+            "Config",
+            "lockfile",
         );
         this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
     }
 
     onModuleInit() {
-        this.logger.log('Iniciando radar de Valorant...');
-        this.intervalId = setInterval(() => this.comprobarEstado(), 2000);
+        this.logger.log("Starting Valorant radar...");
+        this.intervalId = setInterval(() => {
+            void this.checkStatus();
+        }, 2000);
     }
 
     onModuleDestroy() {
         if (this.intervalId) {
             clearInterval(this.intervalId);
-            this.logger.log('Radar de Valorant detenido.');
+            this.logger.log("Valorant radar stopped.");
         }
         if (this.buyPhaseInterval) {
             clearInterval(this.buyPhaseInterval);
         }
     }
 
-    private obtenerCredenciales() {
+    private getCredentials() {
         if (!fs.existsSync(this.lockfilePath)) return null;
 
-        const contenido = fs.readFileSync(this.lockfilePath, 'utf8');
-        const [, , port, password, protocol] = contenido.split(':');
-        const authBase64 = Buffer.from(`riot:${password}`).toString('base64');
+        const content = fs.readFileSync(this.lockfilePath, "utf8");
+        const [, , port, password, protocol] = content.split(":");
+        const authBase64 = Buffer.from(`riot:${password}`).toString("base64");
 
         return {
             url: `${protocol}://127.0.0.1:${port}`,
@@ -84,33 +91,37 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
         };
     }
 
-    private async comprobarEstado() {
-        const credenciales = this.obtenerCredenciales();
+    private async checkStatus() {
+        const credentials = this.getCredentials();
 
-        if (!credenciales) {
-            this.actualizarEstado('CERRADO');
+        if (!credentials) {
+            this.updateStatus("CLOSED");
             return;
         }
 
         const config = {
-            headers: { Authorization: credenciales.token },
+            headers: { Authorization: credentials.token },
             httpsAgent: this.httpsAgent,
         };
 
         try {
-            const sesion = await firstValueFrom(
-                this.httpService.get(`${credenciales.url}/chat/v1/session`, config)
+            const session = await firstValueFrom(
+                this.httpService.get(`${credentials.url}/chat/v1/session`, config),
             );
-            const puuid = sesion.data.puuid;
+            const puuid = session.data.puuid;
 
-            const presencias = await firstValueFrom(
-                this.httpService.get(`${credenciales.url}/chat/v4/presences`, config)
+            const presences = await firstValueFrom(
+                this.httpService.get(`${credentials.url}/chat/v4/presences`, config),
             );
 
-            const miPresencia = presencias.data.presences?.find((p: any) => p.puuid === puuid);
+            const myPresence = presences.data.presences?.find(
+                (p: any) => p.puuid === puuid,
+            );
 
-            if (miPresencia && miPresencia.private) {
-                const decodedJson = Buffer.from(miPresencia.private, 'base64').toString('utf8');
+            if (myPresence && myPresence.private) {
+                const decodedJson = Buffer.from(myPresence.private, "base64").toString(
+                    "utf8",
+                );
                 const privateData = JSON.parse(decodedJson);
 
                 const loopState =
@@ -118,92 +129,109 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
                     privateData.partyPresenceData?.partyOwnerSessionLoopState ||
                     privateData.sessionLoopState;
 
-                if (loopState === 'PREGAME') {
-                    this.limpiarFaseCompra();
-                    const matchId = privateData.partyId || 'PRESENCE_LOBBY';
-                    this.actualizarEstado('PREGAME', { matchId });
-                } else if (loopState === 'INGAME') {
-                    const mapPath = privateData.matchPresenceData?.matchMap || '';
-                    const queueId = privateData.matchPresenceData?.queueId || '';
-                    const mapa = MAPS_MAP[mapPath] || 'Mapa Desconocido';
-                    const modo = QUEUES_MAP[queueId] || 'Modo Desconocido';
-                    this.actualizarEstado('INGAME', { mapa, modo });
+                if (loopState === "PREGAME") {
+                    this.clearBuyPhase();
+                    const matchId = privateData.partyId || "PRESENCE_LOBBY";
+                    this.updateStatus("PREGAME", { matchId });
+                } else if (loopState === "INGAME") {
+                    const mapPath = privateData.matchPresenceData?.matchMap || "";
+                    const queueId = privateData.matchPresenceData?.queueId || "";
+                    const mapName = MAPS_MAP[mapPath] || "Unknown Map";
+                    const mode = QUEUES_MAP[queueId] || "Unknown Mode";
+                    this.updateStatus("INGAME", { mapName, mode });
 
-                    const scoreAlly = privateData.partyOwnerMatchScoreAllyTeam ?? privateData.partyPresenceData?.partyOwnerMatchScoreAllyTeam ?? 0;
-                    const scoreEnemy = privateData.partyOwnerMatchScoreEnemyTeam ?? privateData.partyPresenceData?.partyOwnerMatchScoreEnemyTeam ?? 0;
+                    const scoreAlly =
+                        privateData.partyOwnerMatchScoreAllyTeam ??
+                        privateData.partyPresenceData?.partyOwnerMatchScoreAllyTeam ??
+                        0;
+                    const scoreEnemy =
+                        privateData.partyOwnerMatchScoreEnemyTeam ??
+                        privateData.partyPresenceData?.partyOwnerMatchScoreEnemyTeam ??
+                        0;
 
-                    if (this.scoreAliado === -1 && this.scoreEnemigo === -1) {
-                        this.scoreAliado = scoreAlly;
-                        this.scoreEnemigo = scoreEnemy;
-                        this.iniciarFaseCompra(scoreAlly, scoreEnemy);
-                    } else if (this.scoreAliado !== scoreAlly || this.scoreEnemigo !== scoreEnemy) {
-                        this.scoreAliado = scoreAlly;
-                        this.scoreEnemigo = scoreEnemy;
-                        this.iniciarFaseCompra(scoreAlly, scoreEnemy);
+                    if (this.allyScore === -1 && this.enemyScore === -1) {
+                        this.allyScore = scoreAlly;
+                        this.enemyScore = scoreEnemy;
+                        this.startBuyPhase(scoreAlly, scoreEnemy);
+                    } else if (
+                        this.allyScore !== scoreAlly ||
+                        this.enemyScore !== scoreEnemy
+                    ) {
+                        this.allyScore = scoreAlly;
+                        this.enemyScore = scoreEnemy;
+                        this.startBuyPhase(scoreAlly, scoreEnemy);
                     }
                 } else {
-                    this.limpiarFaseCompra();
-                    this.actualizarEstado('MENU');
+                    this.clearBuyPhase();
+                    this.updateStatus("MENU");
                 }
             } else {
-                this.limpiarFaseCompra();
-                this.actualizarEstado('MENU');
+                this.clearBuyPhase();
+                this.updateStatus("MENU");
             }
-
-        } catch (error: any) {
-            this.limpiarFaseCompra();
-            this.actualizarEstado('CERRADO');
+        } catch {
+            this.clearBuyPhase();
+            this.updateStatus("CLOSED");
         }
     }
 
-    private actualizarEstado(nuevoEstado: string, datosExtra: any = {}) {
-        const estadoCambiado = this.estadoActual !== nuevoEstado;
-        const datosCambiados = JSON.stringify(this.datosExtraActual) !== JSON.stringify(datosExtra);
+    private updateStatus(newStatus: string, extraData: any = {}) {
+        const statusChanged = this.currentStatus !== newStatus;
+        const dataChanged =
+            JSON.stringify(this.currentExtraData) !== JSON.stringify(extraData);
 
-        if (estadoCambiado || datosCambiados) {
-            this.estadoActual = nuevoEstado;
-            this.datosExtraActual = datosExtra;
-            this.logger.log(`Cambio de estado o detalles: ${nuevoEstado} ${JSON.stringify(datosExtra)}`);
+        if (statusChanged || dataChanged) {
+            this.currentStatus = newStatus;
+            this.currentExtraData = extraData;
+            this.logger.log(
+                `Status or details changed: ${newStatus} ${JSON.stringify(extraData)}`,
+            );
 
-            this.gateway.actualizarEstado(nuevoEstado, datosExtra);
+            this.gateway.updateStatus(newStatus, extraData);
         }
     }
 
-    private iniciarFaseCompra(scoreAlly: number, scoreEnemy: number) {
+    private startBuyPhase(scoreAlly: number, scoreEnemy: number) {
         if (this.buyPhaseInterval) {
             clearInterval(this.buyPhaseInterval);
             this.buyPhaseInterval = null;
         }
 
-        const ronda = scoreAlly + scoreEnemy + 1;
-        const esRondaEspecial = (ronda === 1 || ronda === 13 || ronda >= 25);
-        this.buyPhaseSecondsRemaining = esRondaEspecial ? 45 : 30;
+        const round = scoreAlly + scoreEnemy + 1;
+        const isSpecialRound = round === 1 || round === 13 || round >= 25;
+        this.buyPhaseSecondsRemaining = isSpecialRound ? 45 : 30;
 
-        this.logger.log(`¡Nueva ronda detectada! Ronda: ${ronda}. Iniciando fase de compra de ${this.buyPhaseSecondsRemaining} segundos.`);
-        this.gateway.emitirCompraEstado(true, this.buyPhaseSecondsRemaining, ronda);
+        this.logger.log(
+            `New round detected! Round: ${round}. Starting buy phase of ${this.buyPhaseSecondsRemaining} seconds.`,
+        );
+        this.gateway.emitBuyPhaseStatus(true, this.buyPhaseSecondsRemaining, round);
 
         this.buyPhaseInterval = setInterval(() => {
             this.buyPhaseSecondsRemaining--;
             if (this.buyPhaseSecondsRemaining <= 0) {
-                this.logger.log(`Fase de compra terminada para la ronda ${ronda}.`);
-                this.gateway.emitirCompraEstado(false, 0, ronda);
+                this.logger.log(`Buy phase ended for round ${round}.`);
+                this.gateway.emitBuyPhaseStatus(false, 0, round);
                 if (this.buyPhaseInterval) {
                     clearInterval(this.buyPhaseInterval);
                     this.buyPhaseInterval = null;
                 }
             } else {
-                this.gateway.emitirCompraEstado(true, this.buyPhaseSecondsRemaining, ronda);
+                this.gateway.emitBuyPhaseStatus(
+                    true,
+                    this.buyPhaseSecondsRemaining,
+                    round,
+                );
             }
         }, 1000);
     }
 
-    private limpiarFaseCompra() {
-        this.scoreAliado = -1;
-        this.scoreEnemigo = -1;
+    private clearBuyPhase() {
+        this.allyScore = -1;
+        this.enemyScore = -1;
         if (this.buyPhaseInterval) {
             clearInterval(this.buyPhaseInterval);
             this.buyPhaseInterval = null;
-            this.gateway.emitirCompraEstado(false, 0, 0);
+            this.gateway.emitBuyPhaseStatus(false, 0, 0);
         }
     }
 }

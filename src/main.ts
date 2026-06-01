@@ -1,7 +1,7 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { join } from "path";
 
 async function bootstrap() {
   // Especificamos que usamos Express
@@ -11,7 +11,7 @@ async function bootstrap() {
   app.enableCors();
 
   // Le decimos a NestJS dónde están los archivos de la web
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, "..", "public"));
 
   await app.listen(3000);
 }

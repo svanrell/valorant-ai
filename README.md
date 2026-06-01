@@ -10,7 +10,7 @@ This backend serves as both the live local game-radar and the data ingestion pip
 
 1. **Live Local Game Radar (WebSockets)**: 
    - A real-time `ValorantLocalService` polls the local Riot Client `lockfile` to check the game client status.
-   - Using a central Socket.io gateway (`ValorantGateway`), it emits live game state transitions (`CERRADO`, `MENU`, `PREGAME`) and buy phase data (`fase_compra`) directly to the static web dashboard.
+   - Using a central Socket.io gateway (`ValorantGateway`), it emits live game state transitions (`CLOSED`, `MENU`, `PREGAME`) and buy phase data (`buy_phase`) directly to the static web dashboard.
 2. **Synergy Selector (Drafting)**: Recommends the optimal agent to pick based on map geometry, team synergy, and teammate picks to maximize the team's historical win rate.
 3. **Economy Optimizer**: Calculates recommended weapon, armor, and ability loadouts depending on current player credits, map, and round type (Eco, Force, Full Buy).
 4. **Hybrid Data Ingestion Pipeline**:
