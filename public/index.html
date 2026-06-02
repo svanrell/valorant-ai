@@ -3,604 +3,2620 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>LoadoutAi Radar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGENT DRAFT COACH - LoadoutAi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --bg-dark: #05080c;
+            --bg-panel: #0b1219;
+            --bg-panel-header: #0f1a24;
+            --border-cyber: #152232;
+            --border-active: #00f0ff;
+            --text-main: #f5f7fa;
+            --text-muted: #70889f;
+            
+            /* Neon color system */
+            --color-cyan: #00f0ff;
+            --color-red: #ff4655;
+            --color-yellow: #ffd000;
+            --color-green: #00ff9d;
+            
+            --glow-cyan: rgba(0, 240, 255, 0.4);
+            --glow-red: rgba(255, 70, 85, 0.4);
+            --glow-yellow: rgba(255, 208, 0, 0.3);
+            --glow-green: rgba(0, 255, 157, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
             height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f1923;
-            color: white;
-            transition: background-color 0.5s ease;
+            background: linear-gradient(rgba(5, 8, 12, 0.98), rgba(5, 8, 12, 0.98)),
+                radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+            background-size: 100% 100%, 25px 25px;
+            position: relative;
         }
 
-        #status-container {
-            text-align: center;
-            padding: 40px;
-            border-radius: 15px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid transparent;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transition: all 0.3s ease;
-        }
-
-        h1 {
-            margin: 0 0 10px 0;
-            font-size: 3rem;
-            text-transform: uppercase;
-        }
-
-        p {
-            margin: 0;
-            font-size: 1.2rem;
-            color: #ece8e1;
-            opacity: 0.8;
-        }
-
-        .status-closed {
-            border-color: #555 !important;
-        }
-
-        .status-closed h1 {
-            color: #888;
-        }
-
-        .status-menu {
-            border-color: #00ffcc !important;
-        }
-
-        .status-menu h1 {
-            color: #00ffcc;
-        }
-
-        .status-pregame {
-            border-color: #ff4655 !important;
-            background: rgba(255, 70, 85, 0.1) !important;
-        }
-
-        .status-pregame h1 {
-            color: #ff4655;
-        }
-
-        .status-ingame {
-            border-color: #00ff88 !important;
-            background: rgba(0, 255, 136, 0.1) !important;
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
-        }
-
-        .status-ingame h1 {
-            color: #00ff88;
-        }
-
-        #buy-overlay {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 320px;
-            background: rgba(15, 25, 35, 0.95);
-            border: 2px solid #00ff88;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0, 255, 136, 0.25);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        #buy-overlay.hidden {
-            opacity: 0;
-            transform: translateY(-20px);
+        /* Scanline Overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 9999;
+            background-size: 100% 4px, 6px 100%;
             pointer-events: none;
         }
 
-        #close-overlay {
+        /* Header Style */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            border-bottom: 2px solid var(--border-cyber);
+            background-color: rgba(11, 18, 25, 0.85);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 10;
+        }
+
+        header::after {
+            content: '';
             position: absolute;
-            top: 10px;
-            right: 12px;
-            background: transparent;
-            border: none;
-            color: #888;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: color 0.2s;
+            bottom: -2px;
+            left: 5%;
+            width: 10%;
+            height: 2px;
+            background-color: var(--color-cyan);
+            box-shadow: 0 0 10px var(--color-cyan);
         }
 
-        #close-overlay:hover {
-            color: #ff4655;
-        }
-
-        .phase-header {
+        .logo-area {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 15px;
         }
 
-        .pulse-green {
-            width: 8px;
-            height: 8px;
-            background-color: #00ff88;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 8px #00ff88;
-            animation: pulse-green 1.5s infinite;
+        .logo-area svg {
+            fill: var(--color-red);
+            filter: drop-shadow(0 0 8px var(--glow-red));
         }
 
-        @keyframes pulse-green {
-            0% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
-            }
-            70% {
-                transform: scale(1);
-                box-shadow: 0 0 0 8px rgba(0, 255, 136, 0);
-            }
-            100% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
-            }
-        }
-
-        #round-overlay {
-            font-size: 0.85rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            color: #888;
+        .logo-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 900;
+            letter-spacing: 2px;
             text-transform: uppercase;
         }
 
-        #buy-overlay h2 {
-            margin: 0;
-            font-size: 1.4rem;
-            color: white;
+        .logo-title span {
+            color: var(--color-cyan);
+            text-shadow: 0 0 8px var(--glow-cyan);
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 6px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border-cyber);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 26, 36, 0.6);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-offline .status-dot {
+            background-color: var(--color-red);
+            box-shadow: 0 0 8px var(--color-red);
+        }
+        
+        .status-menu-mode .status-dot {
+            background-color: var(--color-yellow);
+            box-shadow: 0 0 8px var(--color-yellow);
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        .status-live .status-dot {
+            background-color: var(--color-green);
+            box-shadow: 0 0 8px var(--color-green);
+            animation: pulse-dot 1s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        /* Map selection dropdown */
+        .map-selector-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-selector-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .map-select {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-cyber);
+            color: var(--color-cyan);
+            padding: 6px 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .map-select:hover:not(:disabled) {
+            border-color: var(--color-cyan);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+
+        .map-select:disabled {
+            color: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* State Views */
+        .state-view {
+            display: none !important;
+            flex: 1;
+            padding: 20px 40px;
+            overflow: hidden;
+            height: calc(100vh - 75px);
+        }
+
+        .state-view.active {
+            display: flex !important;
+        }
+
+        #viewClosed.active {
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #viewMenu.active {
+            display: flex !important;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+        }
+
+        #viewPregame.active {
+            display: grid !important;
+            grid-template-columns: 320px 1fr 400px;
+            gap: 20px;
+        }
+
+        #viewIngame.active {
+            display: flex !important;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: stretch;
+            position: relative;
+            background: linear-gradient(rgba(5, 8, 12, 0.55), rgba(5, 8, 12, 0.65)), url('https://media.valorant-api.com/maps/7eae2e51-4ece-f12b-57fc-92b2dd29d3c4/splash.png') no-repeat center center;
+            background-size: cover;
+        }
+
+        /* Common Cyber Panel Styles */
+        .cyber-panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-cyber);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-header {
+            background: var(--bg-panel-header);
+            border-bottom: 1px solid var(--border-cyber);
+            padding: 12px 18px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header span.accent {
+            color: var(--color-cyan);
+            text-shadow: 0 0 6px var(--glow-cyan);
+        }
+
+        /* Column 1: My Team Panel */
+        .team-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .player-card {
+            background: rgba(15, 26, 36, 0.5);
+            border: 1px solid var(--border-cyber);
+            border-radius: 4px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .player-card.active-selection {
+            border-color: var(--color-cyan);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.15);
+        }
+
+        .player-card.locked {
+            border-left: 4px solid var(--color-red);
+        }
+
+        .player-card.selecting {
+            border-left: 4px solid var(--color-cyan);
+        }
+
+        .player-index {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            width: 15px;
+        }
+
+        .player-avatar-wrap {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            border-radius: 4px;
+            border: 1px solid var(--border-cyber);
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .player-avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-avatar-wrap svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--text-muted);
+        }
+
+        .player-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .player-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .player-agent {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--color-cyan);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .player-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .player-level {
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .player-rank-icon {
+            width: 14px;
+            height: 14px;
+            object-fit: contain;
+        }
+
+        .status-badge-inner {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 2px;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .buy-status {
-            margin: 4px 0 15px 0;
-            font-size: 0.95rem;
-            color: #00ff88;
-            font-weight: 600;
+        .status-locked {
+            background-color: var(--color-red);
+            color: white;
         }
 
-        .timer-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 8px;
+        .status-prepick {
+            background-color: rgba(0, 240, 255, 0.2);
+            color: var(--color-cyan);
+            border: 1px solid var(--color-cyan);
         }
 
-        #timer-bar {
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(90deg, #00ff88, #00cca3);
-            transition: width 1s linear;
+        .status-open {
+            color: var(--text-muted);
+            border: 1px dashed var(--border-cyber);
+            font-weight: normal;
         }
 
-        #timer-text {
-            font-size: 0.85rem;
-            color: #ccc;
-            text-align: right;
-            margin-bottom: 15px;
-        }
-
-        .recommendation-box {
-            background: rgba(255, 255, 255, 0.05);
-            border-left: 3px solid #00ff88;
-            padding: 10px;
-            border-radius: 0 6px 6px 0;
-        }
-
-        .recommendation-box strong {
-            font-size: 0.85rem;
-            color: #00ff88;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .recommendation-box p {
-            font-size: 0.85rem !important;
-            margin: 0;
-            opacity: 0.9;
-            color: #ece8e1;
-        }
-
-        /* Pregame Agent Selection Grid */
-        .pregame-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-top: 25px;
-            width: 100%;
-            max-width: 800px;
-            transition: all 0.3s ease;
-        }
-
-        .pregame-grid.hidden {
+        .clear-slot-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
             display: none;
+            padding: 2px;
         }
 
-        .pregame-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px;
+        .player-card:hover .clear-slot-btn {
+            display: block;
+        }
+
+        .clear-slot-btn:hover {
+            color: var(--color-red);
+        }
+
+        /* Column 2: Dashboard (AI Synergy & Alerts + Map Picks) */
+        .dashboard-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        /* AI Recommendation Panel layout */
+        .ai-rec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Synergy gauge card */
+        .synergy-card {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-width: 120px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .synergy-gauge-container {
+            position: relative;
+            width: 140px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .synergy-ring-bg {
+            fill: none;
+            stroke: rgba(21, 34, 50, 0.8);
+            stroke-width: 10;
+        }
+
+        .synergy-ring-fill {
+            fill: none;
+            stroke: url(#synergyGradient);
+            stroke-width: 10;
+            stroke-dasharray: 188.4;
+            stroke-dashoffset: 188.4;
+            transition: stroke-dashoffset 0.8s ease-out;
+            stroke-linecap: round;
+        }
+
+        .synergy-value {
+            position: absolute;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--text-main);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .synergy-feedback {
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .synergy-rating {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--color-cyan);
+            margin-bottom: 10px;
+        }
+
+        .synergy-analysis-box {
+            font-size: 11px;
+            text-align: left;
+            background: rgba(0,0,0,0.2);
+            padding: 10px 14px;
+            border-radius: 4px;
+            border: 1px solid var(--border-cyber);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .synergy-analysis-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .synergy-analysis-item strong {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 2px;
+            text-transform: uppercase;
+        }
+
+        .strong-label {
+            background: rgba(0, 255, 157, 0.15);
+            color: var(--color-green);
+            border: 1px solid var(--color-green);
+        }
+
+        .weak-label {
+            background: rgba(255, 70, 85, 0.15);
+            color: var(--color-red);
+            border: 1px solid var(--color-red);
+        }
+
+        .synergy-analysis-text {
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* Draft alerts panel */
+        .alerts-card {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            justify-content: flex-start;
+        }
+
+        .alert-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 70, 85, 0.08);
+            border: 1px solid rgba(255, 70, 85, 0.3);
+            padding: 10px 14px;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            animation: alert-slide-in 0.3s ease;
+        }
+
+        .alert-banner::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background-color: var(--color-red);
+            box-shadow: 0 0 8px var(--color-red);
+        }
+
+        @keyframes alert-slide-in {
+            from { transform: translateX(10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .alert-icon {
+            font-size: 16px;
+            color: var(--color-red);
+            filter: drop-shadow(0 0 4px var(--glow-red));
+        }
+
+        .alert-info-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .alert-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--color-red);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .alert-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .alert-success-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 10px;
+            color: var(--color-green);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .alert-success-placeholder svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--color-green);
+            filter: drop-shadow(0 0 6px var(--glow-green));
+        }
+
+        .alert-success-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Map Picks Component */
+        .map-picks-panel {
+            flex: 1;
+            min-height: 250px;
+        }
+
+        .picks-list {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .pick-card {
+            background: rgba(15, 26, 36, 0.4);
+            border: 1px solid var(--border-cyber);
+            border-radius: 4px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
             position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
+            cursor: pointer;
         }
 
-        .pregame-card.pre-selected {
-            border-color: #00f0ff;
-            background: rgba(0, 240, 255, 0.08);
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
-            animation: pulse-border 2s infinite alternate;
+        .pick-card:hover {
+            border-color: var(--color-cyan);
+            background: rgba(0, 240, 255, 0.05);
+            transform: translateY(-3px);
         }
 
-        .pregame-card.locked {
-            border-color: #ff4655;
-            background: rgba(255, 70, 85, 0.15);
-            box-shadow: 0 0 15px rgba(255, 70, 85, 0.3);
-        }
-
-        .player-number {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.4);
-            font-weight: bold;
-            margin-bottom: 2px;
-            letter-spacing: 1px;
-        }
-
-        .player-level {
-            font-size: 0.75rem;
-            color: #00ffcc;
-            font-weight: 600;
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
-        }
-
-        .player-rank-container {
+        .pick-rank-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            color: var(--color-cyan);
+            border: 1px solid var(--border-cyber);
+            background-color: var(--bg-panel);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            font-size: 0.7rem;
-            color: #ffb703;
-            font-weight: bold;
+        }
+
+        .pick-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            border: 1px solid var(--border-cyber);
+            background-color: rgba(0, 0, 0, 0.3);
             margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .pregame-rank-icon {
-            width: 18px;
-            height: 18px;
-            object-fit: contain;
-        }
-
-        .pregame-agent-icon {
-            width: 70px;
-            height: 70px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: rgba(0, 0, 0, 0.5);
             object-fit: cover;
-            margin-bottom: 10px;
-            transition: transform 0.3s ease;
+            transition: all 0.3s;
         }
 
-        .pregame-agent-name {
-            font-size: 0.95rem;
+        .pick-card:hover .pick-avatar {
+            border-color: var(--color-cyan);
+            box-shadow: 0 0 10px var(--glow-cyan);
+        }
+
+        .pick-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
             font-weight: 700;
-            color: #ece8e1;
+            color: var(--text-main);
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .pick-role {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .pick-stat-label {
+            font-size: 9px;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .pregame-status-badge {
-            font-size: 0.75rem;
-            font-weight: bold;
-            padding: 3px 10px;
+        .pick-winrate {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-green);
+            text-shadow: 0 0 4px var(--glow-green);
+        }
+
+        /* Column 3: Agent Select Grid & Details Panel */
+        .agent-grid-panel {
+            flex: 1;
+            min-height: 250px;
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--border-cyber);
+            background: rgba(15, 26, 36, 0.4);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            color: var(--color-cyan);
+            border-bottom-color: var(--color-cyan);
+            background-color: var(--bg-panel-header);
+        }
+
+        .agents-grid-container {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .agent-grid-item {
+            aspect-ratio: 1;
+            background: rgba(15, 26, 36, 0.6);
+            border: 1px solid var(--border-cyber);
             border-radius: 4px;
-            margin-top: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .agent-grid-item:hover {
+            border-color: var(--color-cyan);
+            box-shadow: 0 0 8px var(--glow-cyan);
+            transform: scale(1.05);
+        }
+
+        .agent-grid-item.selected {
+            border-color: var(--color-cyan);
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 12px var(--glow-cyan);
+        }
+
+        .agent-grid-item img {
+            width: 90%;
+            height: 90%;
+            object-fit: cover;
+            transition: all 0.2s;
+        }
+
+        .agent-grid-item:hover img {
+            width: 100%;
+            height: 100%;
+        }
+
+        .agent-grid-item.picked img {
+            filter: grayscale(1) opacity(0.4);
+        }
+
+        .agent-grid-item .locked-overlay {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            background: var(--color-red);
+            border-radius: 2px;
+            padding: 1px 3px;
+            font-size: 8px;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        /* Selection details and Lock panel */
+        .selection-panel {
+            height: 280px;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: row;
+            padding: 15px;
+            gap: 15px;
+        }
+
+        .selection-portrait-wrap {
+            width: 110px;
+            height: 100%;
+            border: 1px solid var(--border-cyber);
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .selection-portrait-wrap img {
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .selection-portrait-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            text-align: center;
+            font-size: 10px;
+            gap: 6px;
+        }
+
+        .selection-portrait-placeholder svg {
+            width: 32px;
+            height: 32px;
+            stroke: var(--text-muted);
+        }
+
+        .selection-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            justify-content: space-between;
+        }
+
+        .selection-info-header {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .selection-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-main);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        .badge-selecting {
-            background: rgba(255, 255, 255, 0.1);
-            color: #aaa;
+        .selection-role {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--color-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .badge-prepick {
-            background: rgba(0, 240, 255, 0.2);
-            color: #00f0ff;
+        .selection-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            max-height: 60px;
+            overflow-y: auto;
+            margin-top: 5px;
         }
 
-        .badge-locked {
-            background: #ff4655;
+        .selection-abilities-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .ability-icon-wrap {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border-cyber);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: help;
+            position: relative;
+        }
+
+        .ability-icon-wrap img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+        }
+
+        .ability-icon-wrap:hover {
+            border-color: var(--color-cyan);
+            background: rgba(0, 240, 255, 0.05);
+        }
+
+        /* Action elements (Timer & Lock in btn) */
+        .selection-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-cyber);
+            padding-top: 15px;
+            gap: 15px;
+        }
+
+        .timer-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .timer-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timer-digits {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-cyan);
+            text-shadow: 0 0 6px var(--glow-cyan);
+        }
+
+        .lock-btn {
+            flex: 1;
+            background-color: var(--color-red);
+            border: none;
             color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 12px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(255, 70, 85, 0.3);
+            transition: all 0.3s;
         }
 
-        @keyframes pulse-border {
-            0% {
-                box-shadow: 0 0 5px rgba(0, 240, 255, 0.1);
-                border-color: rgba(0, 240, 255, 0.4);
-            }
-            100% {
-                box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-                border-color: rgba(0, 240, 255, 1);
-            }
+        .lock-btn:hover:not(:disabled) {
+            background-color: #ff5c69;
+            box-shadow: 0 0 15px var(--glow-red);
+            transform: translateY(-1px);
         }
 
-        @media (max-width: 768px) {
-            .pregame-grid {
-                grid-template-columns: repeat(2, 1fr);
-                justify-content: center;
-            }
+        .lock-btn:disabled {
+            background-color: rgba(15, 26, 36, 0.4);
+            border: 1px solid var(--border-cyber);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
         }
 
-        @media (max-width: 480px) {
-            .pregame-grid {
-                grid-template-columns: 1fr;
-            }
+        /* Buy overlay floating overlay */
+        .floating-buy-overlay {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 350px;
+            background: rgba(11, 18, 25, 0.95);
+            border: 2px solid var(--color-green);
+            box-shadow: 0 10px 30px rgba(0, 255, 157, 0.2);
+            border-radius: 6px;
+            padding: 16px;
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .floating-buy-overlay.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .buy-overlay-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-cyber);
+            padding-bottom: 8px;
+        }
+
+        .buy-overlay-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-green);
+            text-shadow: 0 0 4px var(--glow-green);
+            text-transform: uppercase;
+        }
+
+        .buy-overlay-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .buy-overlay-close:hover {
+            color: var(--color-red);
+        }
+
+        .buy-details {
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .buy-details strong {
+            color: var(--color-cyan);
+        }
+
+        .buy-timer-bar-bg {
+            height: 4px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .buy-timer-bar-fill {
+            height: 100%;
+            background: var(--color-green);
+            width: 100%;
+            transition: width 1s linear;
+        }
+        
+        /* Lobby Standby Animations */
+        @keyframes radar-expand {
+            0% { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        /* Scrollbar custom styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-cyber);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
     </style>
 </head>
 
 <body>
+    <!-- Gradient for SVG Synergy Meter -->
+    <svg style="width:0;height:0;position:absolute;">
+        <defs>
+            <linearGradient id="synergyGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ff4655" />
+                <stop offset="50%" stop-color="#ffd000" />
+                <stop offset="100%" stop-color="#00ff9d" />
+            </linearGradient>
+        </defs>
+    </svg>
 
-    <div id="status-container" class="status-closed">
-        <h1 id="status-text">GAME CLOSED</h1>
-        <p id="detail-text">Waiting for Valorant to start...</p>
-        <div id="pregame-team-container" class="pregame-grid hidden"></div>
+    <header>
+        <div class="logo-area">
+            <svg width="24" height="24" viewBox="0 0 100 100">
+                <path d="M10 20 L50 90 L90 20 L50 40 Z" />
+            </svg>
+            <div class="logo-title">LOADOUT<span>AI</span></div>
+        </div>
+
+        <div class="status-container">
+            <div class="map-selector-wrap">
+                <div class="map-selector-label">Tactical Map:</div>
+                <select id="mapSelect" class="map-select">
+                    <option value="Ascent">Ascent</option>
+                    <option value="Bind">Bind</option>
+                    <option value="Haven">Haven</option>
+                    <option value="Split">Split</option>
+                    <option value="Breeze">Breeze</option>
+                    <option value="Icebox">Icebox</option>
+                    <option value="Sunset">Sunset</option>
+                    <option value="Lotus">Lotus</option>
+                </select>
+            </div>
+
+            <div id="connectionStatus" class="status-badge status-offline">
+                <span class="status-dot"></span>
+                <span id="connectionText">Radar Offline</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- STATE 1: CLOSED / OFFLINE VIEW -->
+    <div id="viewClosed" class="state-view active">
+        <div class="cyber-panel offline-card" style="width: 500px; padding: 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+            <div class="pulse-red" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--color-red); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 0 15px var(--glow-red);">
+                <span style="font-size: 30px; color: var(--color-red); font-weight: bold;">!</span>
+            </div>
+            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span style="color: var(--color-red); text-shadow: 0 0 8px var(--glow-red);">OFFLINE</span></div>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
+                The local VALORANT client is not running. Please open the game to start live tactical mapping and draft recommendations.
+            </p>
+            <div style="font-family: monospace; font-size: 11px; color: var(--color-cyan); background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 4px; border: 1px solid var(--border-cyber); width: 100%;">
+                [POLLING RADAR CLIENT GATEWAY...]
+            </div>
+            <button class="lock-btn" style="background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2); width: 100%; margin-top: 10px;" onclick="startSimulator()">
+                LAUNCH OFFLINE SIMULATOR
+            </button>
+            <button class="lock-btn" style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);" onclick="startIngameDemo()">
+                LAUNCH IN-GAME OVERLAY (HUD DEMO)
+            </button>
+        </div>
     </div>
 
-    <div id="buy-overlay" class="hidden">
-        <button id="close-overlay" onclick="hideOverlay()">&times;</button>
-        <div class="phase-header">
-            <span class="pulse-green"></span>
-            <span id="round-overlay">ROUND -</span>
+    <!-- STATE 2: MENU / LOBBY STANDBY VIEW -->
+    <div id="viewMenu" class="state-view">
+        <div class="cyber-panel lobby-radar-card" style="width: 450px; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+            <div class="radar-ping-container" style="position: relative; width: 80px; height: 80px; margin-bottom: 10px;">
+                <div class="radar-ring" style="position: absolute; top:0; left:0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-cyan); animation: radar-expand 2s infinite linear;"></div>
+                <div class="radar-ring" style="position: absolute; top:0; left:0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-cyan); animation: radar-expand 2s infinite linear; animation-delay: 1s;"></div>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: var(--color-cyan); box-shadow: 0 0 10px var(--color-cyan);"></div>
+            </div>
+            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span style="color: var(--color-cyan); text-shadow: 0 0 8px var(--glow-cyan);">STANDBY</span></div>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
+                Riot local client detected. You are currently in menus or queue. Searching for match...
+            </p>
+            <button class="lock-btn" style="width: 100%; background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2);" onclick="startSimulator()">
+                OPEN AGENT DRAFT COACH (SANDBOX)
+            </button>
+            <button class="lock-btn" style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);" onclick="startIngameDemo()">
+                LAUNCH IN-GAME OVERLAY (HUD DEMO)
+            </button>
         </div>
-        <h2>BUY PHASE</h2>
-        <p class="buy-status">BUY AVAILABLE!</p>
         
-        <div class="timer-container">
-            <div id="timer-bar"></div>
-        </div>
-        <div id="timer-text">0s remaining</div>
-
-        <div class="recommendation-box">
-            <strong>AI Recommendation:</strong>
-            <p id="recommendation-text">Analyzing economy...</p>
+        <div class="cyber-panel" style="width: 450px; padding: 30px; display: flex; flex-direction: column; gap: 15px;">
+            <div class="panel-header" style="background: transparent; border-bottom: 1px solid var(--border-cyber); padding: 0 0 10px 0;">
+                <span>Map Ingestion Cache</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; max-height: 250px; padding-right: 5px;">
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">ASCENT</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 24,192 matches</div>
+                </div>
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">BIND</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 18,944 matches</div>
+                </div>
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">HAVEN</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 15,200 matches</div>
+                </div>
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">SPLIT</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 12,832 matches</div>
+                </div>
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">BREEZE</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 9,412 matches</div>
+                </div>
+                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">ICEBOX</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 11,048 matches</div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- STATE 3: PREGAME / AGENT DRAFT COACH VIEW -->
+    <div id="viewPregame" class="state-view">
+        <!-- Column 1: Team Configuration -->
+        <div class="cyber-panel">
+            <div class="panel-header">
+                <span>My Team Composition</span>
+                <span id="teamCount" class="accent">0 / 5 Picked</span>
+            </div>
+            <div id="teamList" class="team-list">
+                <!-- Javascript will inject 5 slots here -->
+            </div>
+        </div>
+
+        <!-- Column 2: Dashboard (Synergy, Alerts, Recommendations) -->
+        <div class="dashboard-col">
+            <div class="ai-rec-grid">
+                <!-- AI Synergy Gauge Card -->
+                <div class="cyber-panel synergy-card">
+                    <div class="panel-header" style="width:100%; border-bottom: none; background: transparent; padding: 0 0 15px 0;">
+                        <span>Team Synergy Analyzer</span>
+                    </div>
+                    
+                    <div class="synergy-gauge-container">
+                        <svg width="140" height="80" viewBox="0 0 140 80">
+                            <path class="synergy-ring-bg" d="M 15,75 A 55,55 0 0,1 125,75" />
+                            <path id="synergyFill" class="synergy-ring-fill" d="M 15,75 A 55,55 0 0,1 125,75" />
+                        </svg>
+                        <div id="synergyVal" class="synergy-value">0%</div>
+                    </div>
+
+                    <div class="synergy-feedback">
+                        <div id="synergyRating" class="synergy-rating">CRITICAL COMPOSITION</div>
+                        <div class="synergy-analysis-box">
+                            <div class="synergy-analysis-item">
+                                <strong class="strong-label">Strengths</strong>
+                                <span id="synergyStrengths" class="synergy-analysis-text">None</span>
+                            </div>
+                            <div class="synergy-analysis-item">
+                                <strong class="weak-label">Weakness</strong>
+                                <span id="synergyWeaknesses" class="synergy-analysis-text">Missing key roles.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Draft Alerts Card -->
+                <div class="cyber-panel">
+                    <div class="panel-header">
+                        <span>Draft Vulnerabilities</span>
+                    </div>
+                    <div id="alertsContainer" class="alerts-card">
+                        <!-- Javascript will inject warnings here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Picks Card -->
+            <div class="cyber-panel map-picks-panel">
+                <div class="panel-header">
+                    <span>AI Character Recommendation Picks</span>
+                </div>
+                <div id="recommendedPicks" class="picks-list">
+                    <!-- Javascript will inject recommended cards here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 3: Grid Selection -->
+        <div class="cyber-panel">
+            <div class="panel-header">
+                <span>Select Hero Agent</span>
+            </div>
+            
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="filterRole('all')">All</button>
+                <button class="tab-btn" onclick="filterRole('duelist')">Duelists</button>
+                <button class="tab-btn" onclick="filterRole('initiator')">Initiators</button>
+                <button class="tab-btn" onclick="filterRole('controller')">Controllers</button>
+                <button class="tab-btn" onclick="filterRole('sentinel')">Sentinels</button>
+            </div>
+
+            <div id="agentsGrid" class="agents-grid-container">
+                <!-- Javascript will inject grid items here -->
+            </div>
+
+            <!-- Active Selection Area -->
+            <div id="selectionPanel" class="selection-panel">
+                <div class="selection-portrait-wrap">
+                    <div id="selectionPortraitPlaceholder" class="selection-portrait-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="7" r="4"></circle>
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        </svg>
+                        <span>No Character<br>Selected</span>
+                    </div>
+                    <img id="selectionPortrait" style="display:none;" src="" alt="Selected agent portrait">
+                </div>
+
+                <div class="selection-details">
+                    <div class="selection-info-header">
+                        <div id="selectionName" class="selection-name">Select Agent</div>
+                        <div id="selectionRole" class="selection-role">Class Role</div>
+                        <div id="selectionDesc" class="selection-desc">Hover or click a character in the grid to view details, tactical stats, and load abilities.</div>
+                    </div>
+
+                    <div id="selectionAbilities" class="selection-abilities-row">
+                        <!-- Ability icons injected here -->
+                    </div>
+
+                    <div class="selection-actions">
+                        <div class="timer-wrap">
+                            <div class="timer-label">Timer countdown</div>
+                            <div id="timerDigits" class="timer-digits">01:00</div>
+                        </div>
+                        <button id="lockBtn" class="lock-btn" disabled onclick="lockSelection()">Lock Agent</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATE 4: INGAME / LIVE MATCH HUD VIEW -->
+    <div id="viewIngame" class="state-view">
+        <!-- Left hud column -->
+        <div style="display: flex; flex-direction: column; gap: 15px; justify-content: space-between; height: 100%;">
+            <!-- STRAT AI Recommendation Card -->
+            <div class="hud-panel" style="width: 420px; background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 10px;">
+                    <div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); letter-spacing: 1px;">STRAT AI</div>
+                        <div id="ingameRoundHeader" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MATCH START | ROUND 1</div>
+                    </div>
+                    <div id="ingameBuyTimerDigits" style="font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--color-cyan); text-shadow: 0 0 6px var(--glow-cyan);">00:00</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">
+                    <div>
+                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Recommendation</div>
+                        <div id="ingameRecWeapon" style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--color-cyan); text-transform: uppercase;">PHANTOM</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Agent</div>
+                        <div id="ingameRecAgent" style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); text-transform: uppercase;">JETT</div>
+                    </div>
+                    <div>
+                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Creds</div>
+                        <div id="ingameRecCreds" style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: var(--color-yellow);">3200</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Side</div>
+                        <div id="ingameRecSide" style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: var(--color-red);">ATTACKER</div>
+                    </div>
+                </div>
+
+                <!-- Buy Item Details -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border-top: 1px solid var(--border-cyber); padding-top: 15px; text-align: center;">
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                        <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Weapon</div>
+                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="36" height="18" viewBox="0 0 36 18" fill="none" stroke="var(--text-main)" stroke-width="1.5">
+                                <path d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
+                            </svg>
+                        </div>
+                        <div id="ingameBuyWeaponName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">PHANTOM</div>
+                        <div id="ingameBuyWeaponCost" style="font-size: 8px; color: var(--text-muted);">(2900)</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                        <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Shield</div>
+                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="1.5">
+                                <path d="M 12,2 L 4,5 L 4,12 C 4,17 7.5,21 12,22 C 16.5,21 20,17 20,12 L 20,5 Z" />
+                            </svg>
+                        </div>
+                        <div id="ingameBuyShieldName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">LIGHT SHIELD</div>
+                        <div id="ingameBuyShieldCost" style="font-size: 8px; color: var(--text-muted);">(400)</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                        <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Abilities</div>
+                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M 12,2 L 12,22 M 2,12 L 22,12" />
+                            </svg>
+                        </div>
+                        <div id="ingameBuyAbilitiesName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">DASH / SMOKE</div>
+                        <div id="ingameBuyAbilitiesCost" style="font-size: 8px; color: var(--text-muted);">(0)</div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-cyber); padding-top: 10px; font-size: 12px; font-weight: bold;">
+                    <span style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Total Cost</span>
+                    <span id="ingameBuyTotalCost" style="color: var(--color-cyan);">3200</span>
+                </div>
+                
+                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-top: 5px;">
+                    <div id="ingameBuyTimerBar" style="height: 100%; width: 100%; background: var(--color-cyan); transition: width 1s linear;"></div>
+                </div>
+            </div>
+
+            <!-- ENEMY ECONOMY PREDICTION -->
+            <div class="hud-panel" style="width: 420px; background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
+                    ENEMY ECONOMY PREDICTION
+                </div>
+                <div>
+                    <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Round 1 Estimate</div>
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: bold; color: var(--color-cyan); margin-top: 3px;">AVG CREDS: 2800</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid var(--border-cyber);">
+                    <svg width="28" height="14" viewBox="0 0 36 18" fill="none" stroke="var(--color-cyan)" stroke-width="1.5">
+                        <path d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
+                    </svg>
+                    <div style="flex: 1;">
+                        <div style="font-size: 11px; font-weight: bold; color: var(--text-main);">VANDAL / LIGHT SHIELD</div>
+                        <div style="font-size: 9px; color: var(--text-muted);">Light buy with ability spread</div>
+                    </div>
+                </div>
+                <div id="ingameEnemyEcoRating" style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; color: var(--color-yellow); letter-spacing: 1px; text-transform: uppercase;">
+                    ECO (Pistol/Light Buy)
+                </div>
+            </div>
+
+            <!-- LIVE COACH TIP -->
+            <div class="hud-panel" style="width: 420px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--color-cyan); border-radius: 6px; display: flex; flex-direction: row; align-items: stretch; overflow: hidden; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);">
+                <div style="width: 60px; background: var(--color-cyan); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--glow-cyan);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#05080c" stroke-width="2">
+                        <path d="M12 1v11 M9 5v3 M15 5v3 M19 9a7 7 0 0 1-14 0" />
+                        <rect x="10" y="4" width="4" height="8" rx="2" fill="#05080c" />
+                        <path d="M12 16v5 M8 21h8" />
+                    </svg>
+                </div>
+                <div style="flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 5px;">
+                    <div style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; color: var(--color-cyan); letter-spacing: 1.5px; text-transform: uppercase;">LIVE COACH TIP</div>
+                    <p id="ingameCoachText" style="font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.4;">
+                        PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right hud column -->
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; height: 100%;">
+            <!-- ULT TRACKER -->
+            <div class="hud-panel" style="background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); width: 320px;">
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
+                    ULT TRACKER
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="28.25" stroke-linecap="round" />
+                            </svg>
+                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead1" src="https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Jett">
+                            </div>
+                        </div>
+                        <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">70%</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="9.42" stroke-linecap="round" />
+                            </svg>
+                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead2" src="https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Reyna">
+                            </div>
+                        </div>
+                        <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">90%</div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="42.39" stroke-linecap="round" />
+                            </svg>
+                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead3" src="https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Omen">
+                            </div>
+                        </div>
+                        <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">55%</div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                            <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="84.78" stroke-linecap="round" />
+                            </svg>
+                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead4" src="https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Killjoy">
+                            </div>
+                        </div>
+                        <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">10%</div>
+                    </div>
+                </div>
+                <div style="font-size: 8px; color: var(--text-muted); text-align: center; text-transform: uppercase;">ULT (Press 'X')</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Phase Overlay -->
+    <div id="buyOverlay" class="floating-buy-overlay hidden">
+        <div class="buy-overlay-header">
+            <div id="buyOverlayRound" class="buy-overlay-title">ROUND 1 - BUY PHASE</div>
+            <button class="buy-overlay-close" onclick="hideBuyOverlay()">&times;</button>
+        </div>
+        <div id="buyOverlayText" class="buy-details">
+            <strong>AI Buy recommendation:</strong> Loading buy strategy recommendation based on current credit economy...
+        </div>
+        <div class="buy-timer-bar-bg">
+            <div id="buyOverlayTimerBar" class="buy-timer-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- Core Logic Scripts -->
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
-        const socket = io('http://localhost:3000');
+        // AI Recommendations Database by Map
+        const MAP_RECOMMENDATIONS = {
+            'Ascent': [
+                { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '72.4%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
+                { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '69.1%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
+                { id: 'skye', name: 'Skye', role: 'Initiator', winrate: '65.5%', uuid: '6f2a04ca-43e0-be17-7f36-b3908627744d' },
+                { id: 'kay/o', name: 'KAY/O', role: 'Initiator', winrate: '61.8%', uuid: 'a3db83f8-4a55-398d-aa10-09a547d8cda5' }
+            ],
+            'Bind': [
+                { id: 'raze', name: 'Raze', role: 'Duelist', winrate: '70.2%', uuid: 'f94c7e43-f19d-405d-ac15-17e21df5c7a4' },
+                { id: 'brimstone', name: 'Brimstone', role: 'Controller', winrate: '68.5%', uuid: '9f0ac6b1-410a-99d4-d998-7e1458576b53' },
+                { id: 'viper', name: 'Viper', role: 'Controller', winrate: '66.8%', uuid: '707e217c-438f-a5bb-2150-7d066a3416e7' },
+                { id: 'skye', name: 'Skye', role: 'Initiator', winrate: '64.2%', uuid: '6f2a04ca-43e0-be17-7f36-b3908627744d' }
+            ],
+            'Haven': [
+                { id: 'jett', name: 'Jett', role: 'Duelist', winrate: '71.5%', uuid: 'ad8b151e-408d-f227-5185-5b7461c47a45' },
+                { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '69.2%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
+                { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '67.4%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
+                { id: 'breach', name: 'Breach', role: 'Initiator', winrate: '65.1%', uuid: '5f8d3a7f-467b-97f3-062c-13acf203c00a' }
+            ],
+            'Split': [
+                { id: 'raze', name: 'Raze', role: 'Duelist', winrate: '73.1%', uuid: 'f94c7e43-f19d-405d-ac15-17e21df5c7a4' },
+                { id: 'cypher', name: 'Cypher', role: 'Sentinel', winrate: '70.4%', uuid: '117ed9e3-49f3-6512-3ccf-00ad780d1b14' },
+                { id: 'omen', name: 'Omen', role: 'Controller', winrate: '68.2%', uuid: '8e253930-4c05-31dd-1b6c-968525494517' },
+                { id: 'breach', name: 'Breach', role: 'Initiator', winrate: '66.5%', uuid: '5f8d3a7f-467b-97f3-062c-13acf203c00a' }
+            ],
+            'Breeze': [
+                { id: 'jett', name: 'Jett', role: 'Duelist', winrate: '74.2%', uuid: 'ad8b151e-408d-f227-5185-5b7461c47a45' },
+                { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '71.5%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
+                { id: 'viper', name: 'Viper', role: 'Controller', winrate: '69.8%', uuid: '707e217c-438f-a5bb-2150-7d066a3416e7' },
+                { id: 'cypher', name: 'Cypher', role: 'Sentinel', winrate: '68.1%', uuid: '117ed9e3-49f3-6512-3ccf-00ad780d1b14' }
+            ],
+            'Icebox': [
+                { id: 'viper', name: 'Viper', role: 'Controller', winrate: '72.8%', uuid: '707e217c-438f-a5bb-2150-7d066a3416e7' },
+                { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '70.1%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
+                { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '68.4%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
+                { id: 'sage', name: 'Sage', role: 'Sentinel', winrate: '66.2%', uuid: '569fdd95-4d10-43ab-ca70-79becc718b46' }
+            ],
+            'Sunset': [
+                { id: 'cypher', name: 'Cypher', role: 'Sentinel', winrate: '71.9%', uuid: '117ed9e3-49f3-6512-3ccf-00ad780d1b14' },
+                { id: 'omen', name: 'Omen', role: 'Controller', winrate: '69.5%', uuid: '8e253930-4c05-31dd-1b6c-968525494517' },
+                { id: 'raze', name: 'Raze', role: 'Duelist', winrate: '67.8%', uuid: 'f94c7e43-f19d-405d-ac15-17e21df5c7a4' },
+                { id: 'gekko', name: 'Gekko', role: 'Initiator', winrate: '65.2%', uuid: 'e370fa79-4bb1-4364-7343-e70f353024ad' }
+            ],
+            'Lotus': [
+                { id: 'raze', name: 'Raze', role: 'Duelist', winrate: '72.1%', uuid: 'f94c7e43-f19d-405d-ac15-17e21df5c7a4' },
+                { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '69.8%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
+                { id: 'omen', name: 'Omen', role: 'Controller', winrate: '68.0%', uuid: '8e253930-4c05-31dd-1b6c-968525494517' },
+                { id: 'fade', name: 'Fade', role: 'Initiator', winrate: '66.4%', uuid: 'ade7b617-47ca-fb92-f00e-e1916e58c14d' }
+            ]
+        };
 
-        const container = document.getElementById('status-container');
-        const title = document.getElementById('status-text');
-        const details = document.getElementById('detail-text');
+        const MAP_SPLASHES = {
+            'Ascent': 'https://media.valorant-api.com/maps/7eae2e51-4ece-f12b-57fc-92b2dd29d3c4/splash.png',
+            'Bind': 'https://media.valorant-api.com/maps/2c9c43a2-4501-9441-727e-2d9435727bb2/splash.png',
+            'Haven': 'https://media.valorant-api.com/maps/2bee0dc9-4aa9-526f-75b4-07e5aa9458e2/splash.png',
+            'Split': 'https://media.valorant-api.com/maps/d960549e-485c-fb9e-1e4e-a69785a5f25d/splash.png',
+            'Breeze': 'https://media.valorant-api.com/maps/2fb9b465-41f0-842d-70a2-81e09416b4e8/splash.png',
+            'Icebox': 'https://media.valorant-api.com/maps/e2ad5e54-4114-a870-96ae-ab9b691135a8/splash.png',
+            'Sunset': 'https://media.valorant-api.com/maps/2262b647-43e1-a4a1-0265-72ac2b2b1c41/splash.png',
+            'Lotus': 'https://media.valorant-api.com/maps/2fe4ed3a-450a-948b-6d6d-e8f788c22147/splash.png'
+        };
 
-        let agentsMap = {};
-        let ranksMap = {};
+        // Application State
+        let isLiveMode = false;
+        let activeTab = 'all';
+        let agentsList = []; // dynamic from valorant-api
+        let selectedMap = 'Ascent';
+        let currentDraftSlot = 0; // index of player card currently targeted for manual pick (0-4)
+        
+        // 5 slots representing players (Simulator or Live)
+        let myTeam = [
+            { puuid: 'p1', name: 'Ally 1 (You)', agentId: null, state: '', level: 125, rank: 21, playerCardId: '' },
+            { puuid: 'p2', name: 'Ally 2', agentId: null, state: '', level: 88, rank: 18, playerCardId: '' },
+            { puuid: 'p3', name: 'Ally 3', agentId: null, state: '', level: 232, rank: 20, playerCardId: '' },
+            { puuid: 'p4', name: 'Ally 4', agentId: null, state: '', level: 41, rank: 17, playerCardId: '' },
+            { puuid: 'p5', name: 'Ally 5', agentId: null, state: '', level: 195, rank: 22, playerCardId: '' }
+        ];
 
-        async function loadAgents() {
+        // Active highlighted agent (clicked on grid but not locked yet)
+        let activeSelectedAgent = null;
+
+        // Assets cache
+        let agentsCache = {};
+        let ranksCache = {};
+
+        // DOM Elements
+        const mapSelect = document.getElementById('mapSelect');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const connectionText = document.getElementById('connectionText');
+        const teamList = document.getElementById('teamList');
+        const teamCount = document.getElementById('teamCount');
+        const synergyFill = document.getElementById('synergyFill');
+        const synergyVal = document.getElementById('synergyVal');
+        const synergyRating = document.getElementById('synergyRating');
+        const synergyStrengths = document.getElementById('synergyStrengths');
+        const synergyWeaknesses = document.getElementById('synergyWeaknesses');
+        const alertsContainer = document.getElementById('alertsContainer');
+        const recommendedPicks = document.getElementById('recommendedPicks');
+        const agentsGrid = document.getElementById('agentsGrid');
+        
+        // Selection Detail elements
+        const selectionPanel = document.getElementById('selectionPanel');
+        const selectionPortrait = document.getElementById('selectionPortrait');
+        const selectionPortraitPlaceholder = document.getElementById('selectionPortraitPlaceholder');
+        const selectionName = document.getElementById('selectionName');
+        const selectionRole = document.getElementById('selectionRole');
+        const selectionDesc = document.getElementById('selectionDesc');
+        const selectionAbilities = document.getElementById('selectionAbilities');
+        const lockBtn = document.getElementById('lockBtn');
+        const timerDigits = document.getElementById('timerDigits');
+
+        // Buy Overlay elements
+        const buyOverlay = document.getElementById('buyOverlay');
+        const buyOverlayRound = document.getElementById('buyOverlayRound');
+        const buyOverlayText = document.getElementById('buyOverlayText');
+        const buyOverlayTimerBar = document.getElementById('buyOverlayTimerBar');
+
+        // Load agents and ranks from API
+        async function initData() {
             try {
-                const response = await fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true&language=es-ES');
-                const result = await response.json();
-                if (result.status === 200) {
-                    result.data.forEach(agent => {
-                        agentsMap[agent.uuid.toLowerCase()] = {
+                // Fetch agents
+                const agentRes = await fetch('https://valorant-api.com/v1/agents?isPlayableCharacter=true&language=en-US');
+                const agentJson = await agentRes.json();
+                if (agentJson.status === 200) {
+                    agentsList = agentJson.data;
+                    agentsList.forEach(agent => {
+                        agentsCache[agent.uuid.toLowerCase()] = {
                             name: agent.displayName,
-                            icon: agent.displayIcon
+                            icon: agent.displayIcon,
+                            bust: agent.bustPortrait,
+                            full: agent.fullPortrait,
+                            role: agent.role ? agent.role.displayName : '',
+                            description: agent.description,
+                            abilities: agent.abilities
                         };
                     });
                 }
-            } catch (err) {
-                console.error("Failed to load agent assets:", err);
-            }
-        }
 
-        async function loadRanks() {
-            try {
-                const response = await fetch('https://valorant-api.com/v1/competitivetiers');
-                const result = await response.json();
-                if (result.status === 200 && result.data.length > 0) {
-                    const latestTierSet = result.data[result.data.length - 1];
-                    latestTierSet.tiers.forEach(tierObj => {
-                        ranksMap[tierObj.tier] = {
-                            name: tierObj.tierName,
-                            icon: tierObj.largeIcon
+                // Fetch competitive tiers (ranks)
+                const rankRes = await fetch('https://valorant-api.com/v1/competitivetiers');
+                const rankJson = await rankRes.json();
+                if (rankJson.status === 200 && rankJson.data.length > 0) {
+                    const latestTiers = rankJson.data[rankJson.data.length - 1].tiers;
+                    latestTiers.forEach(tier => {
+                        ranksCache[tier.tier] = {
+                            name: tier.tierName,
+                            icon: tier.largeIcon
                         };
                     });
                 }
+
+                // Render components
+                renderTeam();
+                renderAgentsGrid();
+                renderRecommended();
+                updateSynergy();
+
             } catch (err) {
-                console.error("Failed to load rank assets:", err);
+                console.error("Initialization error:", err);
             }
         }
 
-        loadAgents();
-        loadRanks();
-
-        function renderPregamePlayers(players) {
-            const pregameContainer = document.getElementById('pregame-team-container');
-            pregameContainer.innerHTML = '';
-            
-            if (!players || players.length === 0) {
-                pregameContainer.classList.add('hidden');
-                return;
+        // Switch active fullscreen layout
+        function switchView(viewName) {
+            document.querySelectorAll('.state-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            const target = document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+            if (target) {
+                target.classList.add('active');
             }
+        }
+
+        // Initialize grid list of agents
+        function renderAgentsGrid() {
+            agentsGrid.innerHTML = '';
             
-            pregameContainer.classList.remove('hidden');
-            
-            players.forEach((player, index) => {
-                const card = document.createElement('div');
-                card.className = 'pregame-card';
+            // Filter agents
+            const filtered = agentsList.filter(agent => {
+                if (activeTab === 'all') return true;
+                if (!agent.role) return false;
+                return agent.role.displayName.toLowerCase() === activeTab;
+            });
+
+            // Sort alphabetically
+            filtered.sort((a,b) => a.displayName.localeCompare(b.displayName));
+
+            filtered.forEach(agent => {
+                const item = document.createElement('div');
+                item.className = 'agent-grid-item';
                 
-                // Aplicar fondo dinámico con la tarjeta del jugador
-                if (player.playerCardId) {
-                    card.style.backgroundImage = `linear-gradient(rgba(15, 25, 35, 0.85), rgba(15, 25, 35, 0.95)), url(https://media.valorant-api.com/playercards/${player.playerCardId}/wideart.png)`;
-                    card.style.backgroundSize = 'cover';
-                    card.style.backgroundPosition = 'center';
-                } else {
-                    card.style.backgroundImage = 'none';
-                }
-                
-                const agentId = (player.agentId || '').toLowerCase();
-                const selectionState = player.state; // "", "selected", "locked"
-                
-                let agentName = 'SELECCIONANDO';
-                let agentIconHtml = `
-                    <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" style="margin-bottom: 10px;">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                `;
-                
-                if (agentId && agentsMap[agentId]) {
-                    agentName = agentsMap[agentId].name;
-                    agentIconHtml = `<img src="${agentsMap[agentId].icon}" class="pregame-agent-icon" alt="${agentName}">`;
-                }
-                
-                let badgeText = 'SELECCIONANDO';
-                let badgeClass = 'badge-selecting';
-                
-                if (selectionState === 'selected') {
-                    card.classList.add('pre-selected');
-                    badgeText = 'PRE-PICK';
-                    badgeClass = 'badge-prepick';
-                } else if (selectionState === 'locked') {
-                    card.classList.add('locked');
-                    badgeText = 'BLOQUEADO';
-                    badgeClass = 'badge-locked';
-                }
-                
-                let rankHtml = '<div class="player-rank-container"><span>Sin Rango</span></div>';
-                if (player.rank !== undefined && ranksMap[player.rank]) {
-                    const rankInfo = ranksMap[player.rank];
-                    rankHtml = `
-                        <div class="player-rank-container">
-                            ${rankInfo.icon ? `<img src="${rankInfo.icon}" class="pregame-rank-icon" alt="${rankInfo.name}">` : ''}
-                            <span>${rankInfo.name}</span>
-                        </div>
-                    `;
+                const agentUuidLower = agent.uuid.toLowerCase();
+                if (activeSelectedAgent && activeSelectedAgent.uuid === agent.uuid) {
+                    item.classList.add('selected');
                 }
 
-                const levelText = player.level ? `Nivel ${player.level}` : 'Nivel -';
-                card.innerHTML = `
-                    <div class="player-number">ALIADO ${index + 1}</div>
-                    <div class="player-level">${levelText}</div>
-                    ${rankHtml}
-                    ${agentIconHtml}
-                    <div class="pregame-agent-name">${agentName}</div>
-                    <div class="pregame-status-badge ${badgeClass}">${badgeText}</div>
-                `;
+                // Check if agent is already taken by someone else on the team
+                const isTaken = myTeam.some(player => player.agentId === agentUuidLower);
+                if (isTaken) {
+                    item.classList.add('picked');
+                }
                 
-                pregameContainer.appendChild(card);
+                item.innerHTML = `<img src="${agent.displayIcon}" alt="${agent.displayName}" title="${agent.displayName}">`;
+                
+                if (isTaken) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'locked-overlay';
+                    overlay.innerText = 'PICKED';
+                    item.appendChild(overlay);
+                }
+
+                item.onclick = () => selectAgent(agent);
+                agentsGrid.appendChild(item);
             });
         }
 
-        socket.on('valorant_status', (data) => {
-            console.log("New status received:", data);
-            container.className = '';
+        function filterRole(roleName) {
+            activeTab = roleName;
+            // Update tabs state
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                if (tab.innerText.toLowerCase() === roleName + 's' || (roleName === 'all' && tab.innerText.toLowerCase() === 'all')) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            renderAgentsGrid();
+        }
 
-            // Ocultar pregame por defecto en otros estados
-            if (data.status !== 'PREGAME') {
-                document.getElementById('pregame-team-container').classList.add('hidden');
-            }
-
-            if (data.status === 'CLOSED') {
-                container.classList.add('status-closed');
-                title.innerText = 'GAME CLOSED';
-                details.innerText = 'Waiting for Valorant to start...';
-            }
-            else if (data.status === 'MENU') {
-                container.classList.add('status-menu');
-                title.innerText = 'IN MENU';
-                details.innerText = 'Searching for a match or in lobby...';
-            }
-            else if (data.status === 'PREGAME') {
-                container.classList.add('status-pregame');
-                title.innerText = 'AGENT SELECTION!';
-                details.innerText = `Match ID: ${data.matchId}`;
-                renderPregamePlayers(data.players);
-            }
-            else if (data.status === 'INGAME') {
-                container.classList.add('status-ingame');
-                title.innerText = 'IN-GAME!';
-                details.innerText = `Playing on ${data.mapName || 'Unknown Map'} (${data.mode || 'Unknown Mode'})`;
-            }
-        });
-
-        socket.on('connect', () => console.log('Connected to LoadoutAi server'));
-        socket.on('disconnect', () => {
-            title.innerText = 'NO CONNECTION';
-            details.innerText = 'NestJS server is offline.';
-            container.className = 'status-closed';
-            buyOverlay.classList.add('hidden');
-        });
-
-        const buyOverlay = document.getElementById('buy-overlay');
-        const roundOverlay = document.getElementById('round-overlay');
-        const timerBar = document.getElementById('timer-bar');
-        const timerText = document.getElementById('timer-text');
-        const recommendationText = document.getElementById('recommendation-text');
-
-        let maxTime = 30;
-        let overlayManuallyClosed = false;
-
-        socket.on('buy_phase', (data) => {
-            console.log("Buy phase event received:", data);
+        // Display details of currently selected agent
+        function selectAgent(agent) {
+            // Check if already locked by another player
+            const isTaken = myTeam.some((player, idx) => idx !== currentDraftSlot && player.agentId === agent.uuid.toLowerCase());
             
-            if (data.available) {
-                if (data.time === 30 || data.time === 45) {
-                    overlayManuallyClosed = false;
-                    maxTime = data.time;
+            activeSelectedAgent = agent;
+            
+            // Render selected state in grid
+            const items = document.querySelectorAll('.agent-grid-item');
+            items.forEach(el => el.classList.remove('selected'));
+            
+            // Find active element in grid to add border glow
+            const targetImg = Array.from(agentsGrid.querySelectorAll('img')).find(img => img.src === agent.displayIcon);
+            if (targetImg && targetImg.parentElement) {
+                targetImg.parentElement.classList.add('selected');
+            }
+
+            // Update details block
+            selectionPortraitPlaceholder.style.display = 'none';
+            selectionPortrait.src = agent.fullPortrait || agent.bustPortrait || agent.displayIcon;
+            selectionPortrait.style.display = 'block';
+
+            selectionName.innerText = agent.displayName;
+            selectionRole.innerText = agent.role ? agent.role.displayName : 'ROLE UNKNOWN';
+            selectionDesc.innerText = agent.description;
+
+            // Load abilities
+            selectionAbilities.innerHTML = '';
+            if (agent.abilities) {
+                agent.abilities.forEach(ability => {
+                    if (ability.displayIcon) {
+                        const abIcon = document.createElement('div');
+                        abIcon.className = 'ability-icon-wrap';
+                        abIcon.innerHTML = `<img src="${ability.displayIcon}" alt="${ability.displayName}">`;
+                        abIcon.title = `${ability.displayName}: ${ability.description}`;
+                        selectionAbilities.appendChild(abIcon);
+                    }
+                });
+            }
+
+            // Enable Lock in Button if NOT in Live Mode, or if it is our slot
+            if (isTaken) {
+                lockBtn.disabled = true;
+                lockBtn.innerText = 'Character Taken';
+            } else {
+                lockBtn.disabled = isLiveMode && currentDraftSlot !== 0; // lock disabled if live mode and not Ally 1
+                lockBtn.innerText = 'Lock Agent';
+            }
+        }
+
+        // Lock in the agent to the selected slot (for Simulation mode)
+        function lockSelection() {
+            if (!activeSelectedAgent) return;
+            const agentId = activeSelectedAgent.uuid.toLowerCase();
+
+            // Set agent to targeted slot
+            myTeam[currentDraftSlot].agentId = agentId;
+            myTeam[currentDraftSlot].state = 'locked';
+            myTeam[currentDraftSlot].playerCardId = 'locked';
+
+            // Find next open slot
+            findNextOpenSlot();
+
+            // Refresh team and synergy
+            renderTeam();
+            renderAgentsGrid();
+            updateSynergy();
+        }
+
+        function findNextOpenSlot() {
+            for (let i = 0; i < myTeam.length; i++) {
+                if (!myTeam[i].agentId) {
+                    currentDraftSlot = i;
+                    return;
+                }
+            }
+        }
+
+        // Render left column of team members
+        function renderTeam() {
+            teamList.innerHTML = '';
+            let count = 0;
+
+            myTeam.forEach((player, index) => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                if (index === currentDraftSlot) {
+                    card.classList.add('active-selection');
+                }
+                if (player.state === 'locked') {
+                    card.classList.add('locked');
+                } else if (player.state === 'selected') {
+                    card.classList.add('selecting');
                 }
 
-                if (!overlayManuallyClosed) {
-                    buyOverlay.classList.remove('hidden');
-                    roundOverlay.innerText = `ROUND ${data.round}`;
-                    timerText.innerText = `${data.time}s remaining`;
-                    
-                    const percentage = (data.time / maxTime) * 100;
-                    timerBar.style.width = `${percentage}%`;
+                // Check card background from Riot Assets
+                if (player.agentId && agentsCache[player.agentId]) {
+                    count++;
+                }
 
-                    if (data.round === 1 || data.round === 13) {
-                        recommendationText.innerText = "Pistol Round: Buy Light Shield + Abilities or Ghost.";
-                    } else if (data.round === 2 || data.round === 14) {
-                        recommendationText.innerText = "Eco / Force Buy: Spectre if you won the previous round, pistols in eco if you lost.";
-                    } else if (data.round >= 25) {
-                        recommendationText.innerText = "OVERTIME: Buy everything you can! All or nothing.";
-                    } else {
-                        recommendationText.innerText = "Full Buy: Vandal/Phantom + Heavy Shield + Full Abilities.";
+                // Get rank info
+                let rankHtml = '';
+                if (player.rank && ranksCache[player.rank]) {
+                    rankHtml = `<img src="${ranksCache[player.rank].icon}" class="player-rank-icon" alt="${ranksCache[player.rank].name}" title="${ranksCache[player.rank].name}">`;
+                }
+
+                const agentIdLower = player.agentId ? player.agentId.toLowerCase() : '';
+                const agentData = agentsCache[agentIdLower];
+                
+                let avatarContent = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="7" r="4"></circle>
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    </svg>
+                `;
+
+                if (agentData) {
+                    avatarContent = `<img src="${agentData.icon}" alt="${agentData.name}">`;
+                }
+
+                const agentName = agentData ? agentData.name : 'Selecting...';
+
+                let statusBadgeText = 'OPEN';
+                let statusBadgeClass = 'status-open';
+
+                if (player.state === 'locked') {
+                    statusBadgeText = 'LOCKED';
+                    statusBadgeClass = 'status-locked';
+                } else if (player.state === 'selected') {
+                    statusBadgeText = 'PRE-PICK';
+                    statusBadgeClass = 'status-prepick';
+                }
+
+                card.innerHTML = `
+                    <div class="player-index">${index + 1}</div>
+                    <div class="player-avatar-wrap">
+                        ${avatarContent}
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-agent">${agentName}</div>
+                        <div class="player-meta">
+                            <span class="player-level">LVL ${player.level}</span>
+                            ${rankHtml}
+                            <span class="status-badge-inner ${statusBadgeClass}">${statusBadgeText}</span>
+                        </div>
+                    </div>
+                `;
+
+                // Add clear button in simulator mode
+                if (!isLiveMode && player.agentId) {
+                    const clearBtn = document.createElement('button');
+                    clearBtn.className = 'clear-slot-btn';
+                    clearBtn.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    `;
+                    clearBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        clearSlot(index);
+                    };
+                    card.appendChild(clearBtn);
+                }
+
+                // Slot click updates currently targeted slot for simulator
+                if (!isLiveMode) {
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => {
+                        currentDraftSlot = index;
+                        renderTeam();
+                    };
+                }
+
+                teamList.appendChild(card);
+            });
+
+            teamCount.innerText = `${count} / 5 Picked`;
+        }
+
+        function clearSlot(index) {
+            myTeam[index].agentId = null;
+            myTeam[index].state = '';
+            myTeam[index].playerCardId = '';
+            currentDraftSlot = index;
+            renderTeam();
+            renderAgentsGrid();
+            updateSynergy();
+        }
+
+        // Render AI Recommended Agent Cards
+        function renderRecommended() {
+            recommendedPicks.innerHTML = '';
+            const picks = MAP_RECOMMENDATIONS[selectedMap] || [];
+
+            picks.forEach((pick, index) => {
+                const card = document.createElement('div');
+                card.className = 'pick-card';
+                
+                let avatarUrl = '';
+                if (agentsCache[pick.uuid]) {
+                    avatarUrl = agentsCache[pick.uuid].icon;
+                }
+
+                card.innerHTML = `
+                    <div class="pick-rank-badge">${index + 1}</div>
+                    <img src="${avatarUrl}" class="pick-avatar" alt="${pick.name}">
+                    <div class="pick-name">${pick.name}</div>
+                    <div class="pick-role">${pick.role}</div>
+                    <div class="pick-stat-label">Win Rate</div>
+                    <div class="pick-winrate">${pick.winrate}</div>
+                `;
+
+                // In simulator mode, clicking a recommended card automatically selects it
+                if (!isLiveMode) {
+                    card.onclick = () => {
+                        if (agentsCache[pick.uuid]) {
+                            // Find the raw agent object
+                            const rawAgent = agentsList.find(a => a.uuid === pick.uuid);
+                            if (rawAgent) {
+                                selectAgent(rawAgent);
+                            }
+                        }
+                    };
+                }
+
+                recommendedPicks.appendChild(card);
+            });
+        }
+
+        // Main algorithm to calculate Team Synergy, Strengths, Weaknesses, and Alerts
+        function updateSynergy() {
+            let synergy = 50; // Base baseline
+            
+            // Track composition classes
+            let counts = {
+                'Duelist': 0,
+                'Initiator': 0,
+                'Controller': 0, // Smokes
+                'Sentinel': 0
+            };
+            
+            let healers = 0; // Sage / Skye
+            let totalAgentsPicked = 0;
+            let alignedPicks = 0; // recommendations alignment
+
+            myTeam.forEach(player => {
+                if (player.agentId) {
+                    totalAgentsPicked++;
+                    const agent = agentsCache[player.agentId];
+                    if (agent) {
+                        if (counts[agent.role] !== undefined) {
+                            counts[agent.role]++;
+                        }
+                        if (agent.name === 'Sage' || agent.name === 'Skye') {
+                            healers++;
+                        }
+                        // Check if alignment with recommended agents on map
+                        const isRecommended = (MAP_RECOMMENDATIONS[selectedMap] || []).some(pick => pick.uuid === player.agentId);
+                        if (isRecommended) {
+                            alignedPicks++;
+                        }
                     }
                 }
+            });
+
+            if (totalAgentsPicked === 0) {
+                // Initial state
+                setSynergyMeter(0, "WAITING FOR PICKS", "Select characters to analyze synergy.", "No agents drafted yet.");
+                renderAlerts(counts, healers, totalAgentsPicked);
+                return;
+            }
+
+            // 1. Smokes (Controller) - crucial (+20%)
+            if (counts['Controller'] > 0) {
+                synergy += 20;
+            }
+
+            // 2. Healer (Sage/Skye) - essential (+15%)
+            if (healers > 0) {
+                synergy += 15;
+            }
+
+            // 3. Class diversity (+10% for having at least 1 Duelist and 1 Initiator)
+            if (counts['Duelist'] > 0 && counts['Initiator'] > 0) {
+                synergy += 10;
+            }
+            
+            // 4. Sentinel (lockdown) (+10%)
+            if (counts['Sentinel'] > 0) {
+                synergy += 10;
+            }
+
+            // 5. Recommended picks match (+5% per agent, max +15%)
+            synergy += Math.min(alignedPicks * 5, 15);
+
+            // Cap synergy between 15% and 100% depending on role penalties
+            let penalties = 0;
+            if (counts['Controller'] === 0) penalties += 20;
+            if (healers === 0) penalties += 15;
+            if (counts['Duelist'] === 0) penalties += 10;
+
+            synergy = Math.max(15, Math.min(100, synergy - penalties));
+
+            // Determine status rating
+            let rating = "CRITICAL COMPOSITION";
+            let strengths = [];
+            let weaknesses = [];
+
+            if (synergy >= 85) {
+                rating = "ELITE TEAM SYNERGY";
+                strengths.push("Perfect tactical balance", "Optimal map-pick match");
+            } else if (synergy >= 65) {
+                rating = "BALANCED COMPOSITION";
+                strengths.push("Good core utility presence");
+                if (counts['Controller'] === 0) weaknesses.push("Vulnerable to lines-of-sight (No Smokes)");
+                if (healers === 0) weaknesses.push("Low health sustain (No Healers)");
             } else {
-                buyOverlay.classList.add('hidden');
+                rating = "UNBALANCED COMPOSITION";
+                if (counts['Controller'] === 0) weaknesses.push("Missing smoke visual cover");
+                if (healers === 0) weaknesses.push("Lacks sustain heal abilities");
+                if (totalAgentsPicked < 3) {
+                    strengths.push("Analyzing composition...");
+                }
+            }
+
+            if (counts['Controller'] > 0) strengths.push("Smoke sightline block available");
+            if (healers > 0) strengths.push("Sustain healing support");
+            if (counts['Sentinel'] > 0) strengths.push("Strong site defensive hold");
+
+            const strengthsText = strengths.length > 0 ? strengths.join(", ") : "None detected.";
+            const weaknessesText = weaknesses.length > 0 ? weaknesses.join(", ") : "None detected.";
+
+            setSynergyMeter(synergy, rating, strengthsText, weaknessesText);
+            renderAlerts(counts, healers, totalAgentsPicked);
+        }
+
+        // Animate circular SVG indicator and percentage number
+        function setSynergyMeter(val, rating, strengths, weaknesses) {
+            synergyVal.innerText = `${val}%`;
+            synergyRating.innerText = rating;
+            synergyStrengths.innerText = strengths;
+            synergyWeaknesses.innerText = weaknesses;
+
+            // Gauge SVG math: path length is 188.4 (pi * r where r=55, semi circle)
+            // 0% synergy = stroke-dashoffset 188.4
+            // 100% synergy = stroke-dashoffset 0
+            const maxDash = 188.4;
+            const offset = maxDash - ((val / 100) * maxDash);
+            synergyFill.style.strokeDashoffset = offset;
+
+            // Color status
+            if (val >= 80) {
+                synergyRating.style.color = 'var(--color-green)';
+            } else if (val >= 60) {
+                synergyRating.style.color = 'var(--color-yellow)';
+            } else {
+                synergyRating.style.color = 'var(--color-red)';
+            }
+        }
+
+        // Render critical warnings based on missing utilities
+        function renderAlerts(counts, healers, totalAgents) {
+            alertsContainer.innerHTML = '';
+            
+            if (totalAgents === 0) {
+                alertsContainer.innerHTML = `
+                    <div class="alert-banner" style="background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.2);">
+                        <span class="alert-icon" style="color: var(--color-cyan);">ℹ️</span>
+                        <div class="alert-info-text">
+                            <div class="alert-title" style="color: var(--color-cyan);">Awaiting Select</div>
+                            <div class="alert-desc">Select map and lock characters.</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let warningsCount = 0;
+
+            // Smokes alert
+            if (counts['Controller'] === 0) {
+                warningsCount++;
+                alertsContainer.appendChild(createAlertElement(
+                    "MISSING: SMOKES (NO VISUAL BLOCK)",
+                    "Your team lacks visual coverage block. Suggest Omen, Viper or Brimstone.",
+                    "high"
+                ));
+            }
+
+            // Healer alert
+            if (healers === 0) {
+                warningsCount++;
+                alertsContainer.appendChild(createAlertElement(
+                    "MISSING: HEALER (SUSTAIN LOW)",
+                    "No healing utility detected. Suggest picking Sage or Skye.",
+                    "medium"
+                ));
+            }
+
+            // Duelist alert
+            if (counts['Duelist'] === 0) {
+                warningsCount++;
+                alertsContainer.appendChild(createAlertElement(
+                    "MISSING: DUELIST (ENTRY DEFICIT)",
+                    "Your team lacks entry-fraggers. High risk entering sites. Suggest Jett or Raze.",
+                    "medium"
+                ));
+            }
+
+            // Initiator alert
+            if (counts['Initiator'] === 0) {
+                warningsCount++;
+                alertsContainer.appendChild(createAlertElement(
+                    "MISSING: INITIATOR (INTEL DEFICIT)",
+                    "Your team lacks recon info. Sites will be blind check. Suggest Sova or Fade.",
+                    "medium"
+                ));
+            }
+
+            // If no warnings, show perfect comp message
+            if (warningsCount === 0) {
+                alertsContainer.innerHTML = `
+                    <div class="alert-success-placeholder">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div class="alert-success-title">COMPOSITION OPTIMIZED</div>
+                        <p style="font-size:11px; opacity:0.8;">No major utility deficits. Team ready for tactical match execution!</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createAlertElement(title, desc, priority) {
+            const el = document.createElement('div');
+            el.className = 'alert-banner';
+            
+            if (priority === 'high') {
+                el.style.borderColor = 'rgba(255, 70, 85, 0.4)';
+                el.style.background = 'rgba(255, 70, 85, 0.08)';
+            } else {
+                el.style.borderColor = 'rgba(255, 208, 0, 0.3)';
+                el.style.background = 'rgba(255, 208, 0, 0.06)';
+                el.style.setProperty('--color-red', 'var(--color-yellow)');
+                el.style.setProperty('--glow-red', 'var(--glow-yellow)');
+            }
+
+            el.innerHTML = `
+                <span class="alert-icon">⚠️</span>
+                <div class="alert-info-text">
+                    <div class="alert-title">${title}</div>
+                    <div class="alert-desc">${desc}</div>
+                </div>
+            `;
+            return el;
+        }
+
+        // Change Map dropdown listener
+        mapSelect.onchange = (e) => {
+            selectedMap = e.target.value;
+            renderRecommended();
+            updateSynergy();
+        };
+
+        // Custom Timer Simulation
+        let timerInterval = null;
+        let timeLeft = 60;
+
+        function startTimer(duration) {
+            if (timerInterval) clearInterval(timerInterval);
+            timeLeft = duration;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    clearInterval(timerInterval);
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(timeLeft / 60);
+            const secs = timeLeft % 60;
+            timerDigits.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            if (timeLeft <= 10) {
+                timerDigits.style.color = 'var(--color-red)';
+                timerDigits.style.textShadow = '0 0 6px var(--glow-red)';
+            } else {
+                timerDigits.style.color = 'var(--color-cyan)';
+                timerDigits.style.textShadow = '0 0 6px var(--glow-cyan)';
+            }
+        }
+
+        // Floating Buy Overlay controls
+        let buyOverlayTimeout = null;
+        let buyOverlayMaxTime = 30;
+
+        function showBuyOverlay(round, duration, recommendation) {
+            buyOverlay.classList.remove('hidden');
+            buyOverlayRound.innerText = `ROUND ${round} - BUY PHASE`;
+            buyOverlayText.innerHTML = `<strong>AI BUY STRATEGY:</strong> ${recommendation}`;
+            
+            buyOverlayMaxTime = duration;
+            updateBuyOverlayProgress(duration);
+
+            if (buyOverlayTimeout) clearInterval(buyOverlayTimeout);
+            let buyTimeLeft = duration;
+
+            buyOverlayTimeout = setInterval(() => {
+                buyTimeLeft--;
+                updateBuyOverlayProgress(buyTimeLeft);
+                if (buyTimeLeft <= 0) {
+                    clearInterval(buyOverlayTimeout);
+                    buyOverlay.classList.add('hidden');
+                }
+            }, 1000);
+        }
+
+        function updateBuyOverlayProgress(current) {
+            const pct = (current / buyOverlayMaxTime) * 100;
+            buyOverlayTimerBar.style.width = `${pct}%`;
+        }
+
+        function hideBuyOverlay() {
+            if (buyOverlayTimeout) clearInterval(buyOverlayTimeout);
+            buyOverlay.classList.add('hidden');
+        }
+
+        // Force launch offline simulator sandbox
+        function startSimulator() {
+            isLiveMode = false;
+            setConnectionState('offline', 'Radar Offline (Sim)');
+            switchView('pregame');
+            
+            // Re-render empty team compostion
+            myTeam = [
+                { puuid: 'p1', name: 'Ally 1 (You)', agentId: null, state: '', level: 125, rank: 21, playerCardId: '' },
+                { puuid: 'p2', name: 'Ally 2', agentId: null, state: '', level: 88, rank: 18, playerCardId: '' },
+                { puuid: 'p3', name: 'Ally 3', agentId: null, state: '', level: 232, rank: 20, playerCardId: '' },
+                { puuid: 'p4', name: 'Ally 4', agentId: null, state: '', level: 41, rank: 17, playerCardId: '' },
+                { puuid: 'p5', name: 'Ally 5', agentId: null, state: '', level: 195, rank: 22, playerCardId: '' }
+            ];
+            
+            currentDraftSlot = 0;
+            renderTeam();
+            renderAgentsGrid();
+            updateSynergy();
+            startTimer(60);
+        }
+
+        // Launch in-game HUD HUD view simulation (DEMO)
+        function startIngameDemo() {
+            isLiveMode = false;
+            setConnectionState('offline', 'Radar Offline (Sim)');
+            switchView('ingame');
+            
+            selectedMap = mapSelect.value || 'Ascent';
+            document.getElementById('ingameMap').innerText = selectedMap;
+            document.getElementById('ingameMode').innerText = 'COMPETITIVE';
+            document.getElementById('ingameRoundHeader').innerText = 'MATCH START | ROUND 1';
+            
+            const splash = MAP_SPLASHES[selectedMap] || MAP_SPLASHES['Ascent'];
+            document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.45), rgba(5, 8, 12, 0.55)), url('${splash}')`;
+            
+            // Trigger simulated recommendations
+            document.getElementById('ingameRecWeapon').innerText = 'PHANTOM';
+            document.getElementById('ingameRecAgent').innerText = 'JETT';
+            document.getElementById('ingameRecCreds').innerText = '3200';
+            document.getElementById('ingameRecSide').innerText = 'ATTACKER';
+            
+            document.getElementById('ingameBuyWeaponName').innerText = 'PHANTOM';
+            document.getElementById('ingameBuyWeaponCost').innerText = '(2900)';
+            document.getElementById('ingameBuyShieldName').innerText = 'LIGHT SHIELD';
+            document.getElementById('ingameBuyShieldCost').innerText = '(400)';
+            document.getElementById('ingameBuyAbilitiesName').innerText = 'DASH / SMOKE';
+            document.getElementById('ingameBuyAbilitiesCost').innerText = '(0)';
+            document.getElementById('ingameBuyTotalCost').innerText = '3300';
+            
+            document.getElementById('ingameCoachText').innerText = "PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.";
+            document.getElementById('ingameBuyTimerDigits').innerText = `00:30`;
+            document.getElementById('ingameBuyTimerBar').style.width = '100%';
+            
+            // ult track images
+            document.getElementById('ultAgentHead1').src = 'https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png';
+            document.getElementById('ultAgentHead2').src = 'https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png';
+            document.getElementById('ultAgentHead3').src = 'https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png';
+            document.getElementById('ultAgentHead4').src = 'https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png';
+        }
+
+        // ==========================================
+        // WEB SOCKET & LIVE RIOT DATA INTEGRATION
+        // ==========================================
+        const socket = io('http://localhost:3000');
+
+        socket.on('connect', () => {
+            console.log('Connected to NestJS WebSocket gateway');
+            setConnectionState('menu-mode', 'Radar Online');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from NestJS WebSocket gateway');
+            setConnectionState('offline', 'Radar Offline');
+            switchView('closed');
+        });
+
+        function setConnectionState(state, text) {
+            connectionStatus.className = `status-badge status-${state}`;
+            connectionText.innerText = text;
+            isLiveMode = (state === 'live');
+            
+            if (isLiveMode) {
+                mapSelect.disabled = true; // live client locks map selection
+            } else {
+                mapSelect.disabled = false;
+            }
+        }
+
+        // Listen for live Valorant Game Radar status changes
+        socket.on('valorant_status', (data) => {
+            console.log("Websocket valorant_status event:", data);
+            
+            if (data.status === 'CLOSED') {
+                setConnectionState('offline', 'Game Offline');
+                switchView('closed');
+            } 
+            else if (data.status === 'MENU') {
+                setConnectionState('menu-mode', 'In Game Lobby');
+                switchView('menu');
+            } 
+            else if (data.status === 'PREGAME') {
+                setConnectionState('live', 'Agent Selection');
+                switchView('pregame');
+                
+                // Set map from server pregame matches
+                if (data.mapName) {
+                    selectedMap = data.mapName;
+                    mapSelect.value = selectedMap;
+                    renderRecommended();
+                }
+
+                // Map live player list
+                if (data.players && data.players.length > 0) {
+                    myTeam = data.players.map((p, index) => ({
+                        puuid: p.puuid,
+                        name: p.puuid === 'YOUR_PUUID' ? 'You' : `Ally ${index + 1}`,
+                        agentId: p.agentId ? p.agentId.toLowerCase() : null,
+                        state: p.state, // "", "selected", "locked"
+                        level: p.level || 0,
+                        rank: p.rank || 0,
+                        playerCardId: p.playerCardId || ''
+                    }));
+                }
+
+                renderTeam();
+                renderAgentsGrid();
+                updateSynergy();
+                startTimer(60); // start draft selection timer
+            }
+            else if (data.status === 'INGAME') {
+                setConnectionState('live', 'In Game Match');
+                switchView('ingame');
+                
+                if (data.mapName) {
+                    selectedMap = data.mapName;
+                    mapSelect.value = selectedMap;
+                    document.getElementById('ingameMap').innerText = selectedMap;
+                    
+                    const splash = MAP_SPLASHES[selectedMap] || MAP_SPLASHES['Ascent'];
+                    document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.55), rgba(5, 8, 12, 0.65)), url('${splash}')`;
+                }
+                if (data.mode) {
+                    document.getElementById('ingameMode').innerText = data.mode;
+                }
+                
+                // Set locked status for display
+                myTeam.forEach(p => {
+                    p.state = 'locked';
+                });
+                renderTeam();
+                updateSynergy();
+
+                // Dynamic Ultimate heads based on teammate picks
+                let activeH = [
+                    'https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png', // Jett fallback
+                    'https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png', // Reyna fallback
+                    'https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png', // Omen fallback
+                    'https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png'  // Killjoy fallback
+                ];
+                
+                let loadedIndex = 0;
+                myTeam.forEach((player, idx) => {
+                    if (idx > 0 && player.agentId && agentsCache[player.agentId] && loadedIndex < 4) {
+                        activeH[loadedIndex] = agentsCache[player.agentId].icon;
+                        loadedIndex++;
+                    }
+                });
+
+                document.getElementById('ultAgentHead1').src = activeH[0];
+                document.getElementById('ultAgentHead2').src = activeH[1];
+                document.getElementById('ultAgentHead3').src = activeH[2];
+                document.getElementById('ultAgentHead4').src = activeH[3];
             }
         });
 
-        function hideOverlay() {
-            overlayManuallyClosed = true;
-            buyOverlay.classList.add('hidden');
-        }
+        // Listen for live Buy Phase updates
+        socket.on('buy_phase', (data) => {
+            console.log("WebSocket buy_phase event:", data);
+            
+            let rec = "Full Buy: Phantom + Light Shield + Abilities.";
+            let wName = "PHANTOM";
+            let wCost = 2900;
+            let sName = "LIGHT SHIELD";
+            let sCost = 400;
+            let aName = "FULL BUY";
+            let aCost = 300;
+            
+            if (data.round === 1 || data.round === 13) {
+                rec = "Pistol Round: Buy Ghost + Abilities, or Light Shield + Classic + Abilities.";
+                wName = "GHOST";
+                wCost = 500;
+                sName = "NO SHIELD";
+                sCost = 0;
+                aName = "ABILITIES";
+                aCost = 300;
+            } else if (data.round === 2 || data.round === 14) {
+                rec = "Eco/Anti-eco: If won, Spectre + Light Shield. If lost, save credits (Ghost only).";
+                wName = "SPECTRE";
+                wCost = 1600;
+                sName = "LIGHT SHIELD";
+                sCost = 400;
+                aName = "ABILITIES";
+                aCost = 200;
+            } else if (data.round >= 25) {
+                rec = "OVERTIME: Buy everything! Vandal + Heavy Shield + Abilities.";
+                wName = "VANDAL";
+                wCost = 2900;
+                sName = "HEAVY SHIELD";
+                sCost = 1000;
+                aName = "FULL BUY";
+                aCost = 300;
+            }
+
+            // Estimate side based on round
+            const side = data.round <= 12 ? 'ATTACKER' : 'DEFENDER';
+            
+            // Dynamic coach tips by map and round
+            let coachTip = "PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.";
+            if (selectedMap === 'Ascent') {
+                coachTip = side === 'ATTACKER' 
+                    ? "Push B Main together. Omen smoke Market & CT. Sova scan back site." 
+                    : "Hold A Main with Omen smoke. Killjoy setup B site defense. Watch Mid link.";
+            } else if (selectedMap === 'Bind') {
+                coachTip = side === 'ATTACKER'
+                    ? "Execute A through Short and Showers. Smoke Truck and U-Hall."
+                    : "Hold Hookah aggressively with Raze grenade. Viper wall screen B Long.";
+            }
+
+            // Calculate total cost
+            const totalCost = wCost + sCost + aCost;
+
+            if (data.available) {
+                // Update floating overlay
+                showBuyOverlay(data.round, data.time, rec);
+                
+                // Update in-game HUD widgets
+                document.getElementById('ingameRoundHeader').innerText = `Round ${data.round} - BUY PHASE`;
+                document.getElementById('ingameRecWeapon').innerText = wName;
+                
+                // Set agent name based on first player
+                let myAgent = 'JETT';
+                if (myTeam[0] && myTeam[0].agentId && agentsCache[myTeam[0].agentId]) {
+                    myAgent = agentsCache[myTeam[0].agentId].name;
+                }
+                document.getElementById('ingameRecAgent').innerText = myAgent;
+                document.getElementById('ingameRecCreds').innerText = totalCost.toString();
+                document.getElementById('ingameRecSide').innerText = side;
+                document.getElementById('ingameRecSide').style.color = side === 'ATTACKER' ? 'var(--color-red)' : 'var(--color-cyan)';
+                
+                // Details
+                document.getElementById('ingameBuyWeaponName').innerText = wName;
+                document.getElementById('ingameBuyWeaponCost').innerText = `(${wCost})`;
+                document.getElementById('ingameBuyShieldName').innerText = sName;
+                document.getElementById('ingameBuyShieldCost').innerText = `(${sCost})`;
+                document.getElementById('ingameBuyAbilitiesName').innerText = aName;
+                document.getElementById('ingameBuyAbilitiesCost').innerText = `(${aCost})`;
+                document.getElementById('ingameBuyTotalCost').innerText = totalCost.toString();
+                
+                // Coach tip
+                document.getElementById('ingameCoachText').innerText = coachTip;
+                
+                // Timer
+                const minutes = Math.floor(data.time / 60);
+                const seconds = data.time % 60;
+                document.getElementById('ingameBuyTimerDigits').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('ingameBuyTimerBar').style.width = `${(data.time / 30) * 100}%`;
+                document.getElementById('ingameBuyTimerDigits').style.color = 'var(--color-cyan)';
+            } else {
+                hideBuyOverlay();
+                document.getElementById('ingameRoundHeader').innerText = `Round ${data.round} - LIVE`;
+                document.getElementById('ingameBuyTimerDigits').innerText = `00:00`;
+                document.getElementById('ingameBuyTimerDigits').style.color = 'var(--color-red)';
+                document.getElementById('ingameBuyTimerBar').style.width = `0%`;
+            }
+        });
+
+        // Initialize application
+        initData();
+        startTimer(60); // default simulator draft timer
+        switchView('closed'); // start offline
     </script>
 </body>
 

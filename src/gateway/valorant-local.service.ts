@@ -90,6 +90,7 @@ interface PregamePlayer {
 interface PregameMatchResponse {
   ID: string;
   Version: number;
+  MapID: string;
   AllyTeam: {
     TeamID: string;
     Players: PregamePlayer[];
@@ -266,6 +267,9 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               ),
             );
 
+            const mapPath = pregameMatch.data.MapID || "";
+            const mapName = MAPS_MAP[mapPath] || "Ascent";
+
             const players = pregameMatch.data.AllyTeam.Players.map((p) => ({
               puuid: p.Subject,
               agentId: p.CharacterID,
@@ -277,7 +281,7 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               playerCardId: p.PlayerIdentity?.PlayerCardID,
             }));
 
-            this.updateStatus("PREGAME", { matchId, pregameMatchId, players });
+            this.updateStatus("PREGAME", { matchId, pregameMatchId, players, mapName });
           } catch (error) {
             this.logger.error(
               `Error querying pregame selection details: ${error instanceof Error ? error.message : String(error)}`,
