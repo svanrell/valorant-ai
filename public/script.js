@@ -463,18 +463,17 @@ function renderRecommended() {
             <div class="pick-winrate">${pick.winrate}</div>
         `;
 
-        // In simulator mode, clicking a recommended card automatically selects it
-        if (!isLiveMode) {
-            card.onclick = () => {
-                if (agentsCache[pick.uuid]) {
-                    // Find the raw agent object
-                    const rawAgent = agentsList.find(a => a.uuid === pick.uuid);
-                    if (rawAgent) {
-                        selectAgent(rawAgent);
-                    }
+        // Clicking a recommended card automatically selects it in both simulator and live modes
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+            if (agentsCache[pick.uuid]) {
+                // Find the raw agent object
+                const rawAgent = agentsList.find(a => a.uuid === pick.uuid);
+                if (rawAgent) {
+                    selectAgent(rawAgent);
                 }
-            };
-        }
+            }
+        };
 
         recommendedPicks.appendChild(card);
     });

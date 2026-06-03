@@ -34,7 +34,7 @@ export class ValorantGateway implements OnGatewayConnection {
     private readonly agentsService: AgentsService,
     private readonly mapsService: MapsService,
     private readonly weaponsService: WeaponsService,
-  ) {}
+  ) { }
 
   handleConnection(client: Socket) {
     client.emit("valorant_status", {
