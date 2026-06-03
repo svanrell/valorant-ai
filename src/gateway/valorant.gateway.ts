@@ -22,6 +22,7 @@ export class ValorantGateway implements OnGatewayConnection {
 
   readonly pregameSelect$ = new Subject<{ pregameMatchId: string; agentUuid: string }>();
   readonly pregameLock$ = new Subject<{ pregameMatchId: string; agentUuid: string }>();
+  readonly ingameCredits$ = new Subject<{ credits: number }>();
 
   private currentStatus: string = "CLOSED";
   private extraData: Record<string, unknown> = {};
@@ -189,5 +190,16 @@ export class ValorantGateway implements OnGatewayConnection {
   @SubscribeMessage("pregame_lock")
   handlePregameLock(client: Socket, data: { pregameMatchId: string; agentUuid: string }) {
     this.pregameLock$.next(data);
+  }
+
+  @SubscribeMessage("update_ingame_credits")
+  handleUpdateIngameCredits(client: Socket, data: { credits: number }) {
+    this.ingameCredits$.next(data);
+  }
+
+  emitMlBuyRecommendations(data: any) {
+    if (this.server) {
+      this.server.emit("ml_buy_recommendations", data);
+    }
   }
 }

@@ -10,6 +10,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as https from "https";
 import { firstValueFrom } from "rxjs";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execPromise = promisify(exec);
 
 const MAPS_MAP: Record<string, string> = {
   "/Game/Maps/Ascent/Ascent": "Ascent",
@@ -142,6 +146,7 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
   private enemyScore: number = -1;
   private buyPhaseSecondsRemaining: number = 0;
   private buyPhaseInterval: NodeJS.Timeout | null = null;
+  private currentCredits: number = 800;
 
   constructor(
     private readonly httpService: HttpService,
@@ -169,6 +174,10 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
 
     this.gateway.pregameLock$.subscribe(async (data) => {
       await this.lockAgent(data.pregameMatchId, data.agentUuid);
+    });
+
+    this.gateway.ingameCredits$.subscribe(async (data) => {
+      await this.updateIngameCredits(data.credits);
     });
   }
 
@@ -401,7 +410,31 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               playerCardId: p.PlayerIdentity?.PlayerCardID,
             }));
 
-            this.updateStatus("PREGAME", { matchId, pregameMatchId, players, mapName, myPuuid: puuid });
+            const alliesAgentUuids = players
+              .filter((p) => p.agentId && p.agentId !== "")
+              .map((p) => p.agentId);
+
+            const mlPred = await this.runMLPrediction(
+              "PREGAME",
+              mapName,
+              1,
+              0,
+              0,
+              800,
+              alliesAgentUuids,
+              [],
+            );
+
+            const mlDraftPicks = mlPred && mlPred.recommendations ? mlPred.recommendations : [];
+
+            this.updateStatus("PREGAME", {
+              matchId,
+              pregameMatchId,
+              players,
+              mapName,
+              myPuuid: puuid,
+              mlDraftPicks,
+            });
           } catch (error) {
             this.logger.error(
               `Error querying pregame selection details: ${error instanceof Error ? error.message : String(error)}`,
@@ -563,6 +596,9 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
     );
     this.gateway.emitBuyPhaseStatus(true, this.buyPhaseSecondsRemaining, round);
 
+    // Automatically trigger ML prediction for the new round
+    void this.updateIngameCredits(this.currentCredits);
+
     this.buyPhaseInterval = setInterval(() => {
       this.buyPhaseSecondsRemaining--;
       if (this.buyPhaseSecondsRemaining <= 0) {
@@ -589,6 +625,87 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
       clearInterval(this.buyPhaseInterval);
       this.buyPhaseInterval = null;
       this.gateway.emitBuyPhaseStatus(false, 0, 0);
+    }
+  }
+
+  private async runMLPrediction(
+    stage: "PREGAME" | "INGAME",
+    mapName: string,
+    round: number,
+    scoreAlly: number,
+    scoreEnemy: number,
+    userCredits: number,
+    allies: string[],
+    enemies: string[],
+  ): Promise<any> {
+    const csvHeader =
+      "stage,mapName,round,scoreAlly,scoreEnemy,userCredits,allies,enemies\n";
+    const alliesStr = allies.join(",");
+    const enemiesStr = enemies.join(",");
+    const csvContent = `${csvHeader}${stage},${mapName},${round},${scoreAlly},${scoreEnemy},${userCredits},"${alliesStr}","${enemiesStr}"\n`;
+
+    const contenidoDir = path.join(__dirname, "..", "..", "contenido");
+    const csvPath = path.join(contenidoDir, "live_match_state.csv");
+    const jsonPath = path.join(contenidoDir, "live_predictions.json");
+
+    try {
+      if (!fs.existsSync(contenidoDir)) {
+        fs.mkdirSync(contenidoDir, { recursive: true });
+      }
+
+      fs.writeFileSync(csvPath, csvContent, "utf8");
+
+      const pythonPath = path.join(
+        __dirname,
+        "..",
+        "..",
+        ".venv",
+        "Scripts",
+        "python.exe",
+      );
+      const scriptPath = path.join(contenidoDir, "predict_live.py");
+
+      const cmd = `"${pythonPath}" "${scriptPath}"`;
+      await execPromise(cmd);
+
+      if (fs.existsSync(jsonPath)) {
+        const jsonContent = fs.readFileSync(jsonPath, "utf8");
+        return JSON.parse(jsonContent);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error running ML prediction: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
+    return null;
+  }
+
+  async updateIngameCredits(credits: number) {
+    this.currentCredits = credits;
+    if (this.currentStatus !== "INGAME") return;
+
+    const mapName = (this.currentExtraData?.mapName as string) || "Ascent";
+    const round = this.allyScore + this.enemyScore + 1;
+    const players = (this.currentExtraData?.players as any[]) || [];
+    const alliesAgentUuids = players
+      .filter((p) => p.agentId && p.agentId !== "")
+      .map((p) => p.agentId);
+
+    const mlPred = await this.runMLPrediction(
+      "INGAME",
+      mapName,
+      round,
+      this.allyScore,
+      this.enemyScore,
+      credits,
+      alliesAgentUuids,
+      [],
+    );
+
+    if (mlPred) {
+      this.gateway.emitMlBuyRecommendations(mlPred);
     }
   }
 }

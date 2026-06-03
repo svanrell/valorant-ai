@@ -894,6 +894,12 @@ socket.on('valorant_status', (data) => {
         if (data.mapName) {
             selectedMap = data.mapName;
             mapSelect.value = selectedMap;
+            
+            // Override with live ML recommendations from server if available
+            if (data.mlDraftPicks && data.mlDraftPicks.length > 0) {
+                MAP_RECOMMENDATIONS[selectedMap] = data.mlDraftPicks;
+            }
+            
             renderRecommended();
         }
 
@@ -1113,7 +1119,99 @@ socket.on('buy_phase', (data) => {
 document.getElementById('ingameCreditsInput').oninput = (e) => {
     const credits = parseInt(e.target.value) || 0;
     updateBuyRecommendations(credits, currentIngameRound);
+    if (isLiveMode) {
+        socket.emit('update_ingame_credits', { credits });
+    }
 };
+
+// Listen for live ML Buy Recommendations
+socket.on('ml_buy_recommendations', (data) => {
+    console.log("WebSocket ml_buy_recommendations event:", data);
+    if (data && data.buy_recommendations) {
+        renderMlBuyRecommendations(data);
+    }
+});
+
+function getWeaponCost(name) {
+    const weapon = name.toLowerCase();
+    if (weapon === 'classic') return 0;
+    if (weapon === 'shorty') return 150;
+    if (weapon === 'frenzy') return 450;
+    if (weapon === 'ghost') return 500;
+    if (weapon === 'sheriff') return 800;
+    if (weapon === 'stinger') return 1100;
+    if (weapon === 'spectre') return 1600;
+    if (weapon === 'bucky') return 850;
+    if (weapon === 'judge') return 1850;
+    if (weapon === 'marshal') return 950;
+    if (weapon === 'vandal') return 2900;
+    if (weapon === 'phantom') return 2900;
+    if (weapon === 'guardian') return 2250;
+    if (weapon === 'operator') return 4700;
+    if (weapon === 'odin') return 3200;
+    return 0;
+}
+
+function renderMlBuyRecommendations(data) {
+    if (!data || !data.buy_recommendations || data.buy_recommendations.length === 0) return;
+    
+    const rec = data.buy_recommendations[0]; // Top recommendation
+    
+    // Update weapon
+    document.getElementById('ingameRecWeapon').innerText = rec.weapon.toUpperCase();
+    
+    // Update side based on round
+    const side = currentIngameRound <= 12 ? 'ATTACKER' : 'DEFENDER';
+    document.getElementById('ingameRecSide').innerText = side;
+    document.getElementById('ingameRecSide').style.color = side === 'ATTACKER' ? 'var(--color-red)' : 'var(--color-cyan)';
+    
+    // Update items details
+    document.getElementById('ingameBuyWeaponName').innerText = rec.weapon.toUpperCase();
+    const weaponCost = getWeaponCost(rec.weapon);
+    document.getElementById('ingameBuyWeaponCost').innerText = `(${weaponCost})`;
+    
+    const shieldName = rec.shield === 'Heavy' ? 'HEAVY SHIELD' : (rec.shield === 'Light' ? 'LIGHT SHIELD' : 'NO SHIELD');
+    const shieldCost = rec.shield === 'Heavy' ? 1000 : (rec.shield === 'Light' ? 400 : 0);
+    document.getElementById('ingameBuyShieldName').innerText = shieldName;
+    document.getElementById('ingameBuyShieldCost').innerText = `(${shieldCost})`;
+    
+    const abilitiesName = rec.abilities ? 'FULL BUY' : 'SAVE';
+    const abilitiesCost = rec.abilities ? 400 : 0;
+    document.getElementById('ingameBuyAbilitiesName').innerText = abilitiesName;
+    document.getElementById('ingameBuyAbilitiesCost').innerText = `(${abilitiesCost})`;
+    
+    document.getElementById('ingameBuyTotalCost').innerText = rec.cost.toString();
+    
+    // Coach tip based on tactic
+    let coachTip = `AI SUGGESTED TACTIC: ${rec.tactic.toUpperCase()} | SITE: ${rec.site} | MAIN DEFENDER: ${rec.defensor.toUpperCase()}`;
+    document.getElementById('ingameCoachText').innerText = coachTip;
+    
+    // Update enemy economy prediction
+    if (data.enemy_economy) {
+        const eco = data.enemy_economy;
+        document.getElementById('ingameEnemyEcoEstimateRound').innerText = `ROUND ${currentIngameRound} ESTIMATE`;
+        document.getElementById('ingameEnemyEcoCreds').innerText = `AVG CREDS: ${eco.avg_credits}`;
+        document.getElementById('ingameEnemyEcoLoadout').innerText = `${eco.weapon.toUpperCase()} / ${eco.shield === 'Heavy' ? 'HEAVY' : (eco.shield === 'Light' ? 'LIGHT' : 'NO')} SHIELD`;
+        
+        let ecoDesc = 'Full buy with heavy weapon setup';
+        if (eco.type === 'Eco') {
+            ecoDesc = 'Light saving buy, low utilities';
+        } else if (eco.type === 'Semi-Buy') {
+            ecoDesc = 'Medium buy with SMGs/rifles and light shields';
+        }
+        document.getElementById('ingameEnemyEcoDesc').innerText = ecoDesc;
+        document.getElementById('ingameEnemyEcoRating').innerText = `${eco.type.toUpperCase()} (${eco.type === 'Full-Buy' ? 'DANGEROUS' : 'ECO/SAVE'})`;
+        
+        // Color rating
+        if (eco.type === 'Full-Buy') {
+            document.getElementById('ingameEnemyEcoRating').style.color = 'var(--color-red)';
+        } else if (eco.type === 'Semi-Buy') {
+            document.getElementById('ingameEnemyEcoRating').style.color = 'var(--color-yellow)';
+        } else {
+            document.getElementById('ingameEnemyEcoRating').style.color = 'var(--color-green)';
+        }
+    }
+}
 
 // Initialize application
 initData();
