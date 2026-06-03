@@ -232,8 +232,371 @@ El frontend se conecta al servidor local mediante `const socket = io('http://loc
    - **`PREGAME`**: Pasa al modo selección de personaje de forma automática. Actualiza los jugadores reales que están en tu lobby de juego, sus rangos e iconos, e inhabilita el selector de mapas manual para que la web muestre exactamente el mapa que ha asignado la partida de Riot.
    - **`INGAME`**: Cambia la web a la interfaz HUD de partida en tiempo real. Configura el fondo de pantalla con la imagen del mapa oficial e inicia los widgets de compra.
 3. **`buy_phase`**: Recibe si estás en fase de compra y el tiempo disponible en la ronda:
-   - Muestra u oculta la tarjeta flotante de compra rápida.
+- Muestra u oculta la tarjeta flotante de compra rápida.
    - Si la fase está activa, inicia una barra de cuenta atrás visual de color verde y actualiza el texto de consejo rápido de entrenador en tiempo real según el bando del jugador (ej. Atacantes / Defensores) y el mapa de juego.
 4. **`ml_buy_recommendations`**: Recibe la recomendación estratégica y económica calculada por la Inteligencia Artificial:
    - **Detalles de la compra**: Inyecta en los paneles el arma recomendada (ej. Vandal), el blindaje recomendado (ej. Heavy Shield) y las habilidades, calculando el coste acumulado mediante la función `getWeaponCost`.
    - **Predicción Económica del Enemigo**: Inyecta en el panel inferior los créditos medios estimados del equipo rival, el equipamiento esperado que comprarán y la clasificación de riesgo de la ronda enemiga (ej. ronda de ahorro, compra media o compra completa peligrosa).
+
+---
+
+## 4. Inmersión Profunda en el Tiempo Real y Control Bidireccional
+
+La capacidad de ver en tiempo real lo que ocurre en tu partida y enviar comandos (como pre-seleccionar o fijar un personaje) desde una simple página HTML es posible gracias a una combinación de **WebSockets** y **comunicación local con la API interna de Riot Games**.
+
+### A. La Magia de WebSockets vs HTTP Tradicional
+En el desarrollo web estándar, el cliente (la web) inicia todas las conversaciones mediante peticiones HTTP. El servidor no puede hablarle a la web a menos que esta le pregunte primero.
+
+En LoadoutAI, el uso de **Socket.io** establece un canal de WebSockets:
+* Al cargarse la web, `io('http://localhost:3000')` realiza una conexión permanente.
+* El canal permanece abierto. Es como una llamada de voz activa: el servidor NestJS puede "hablarle" al navegador en cualquier milisegundo para avisarle de sucesos del juego, y el navegador puede enviarle comandos al backend inmediatamente sin tiempos de espera.
+
+---
+
+### B. El Flujo de Lectura: Del Juego a la Pantalla (Tiempo Real)
+
+Cada vez que ocurre algo en tu partida, los datos viajan en esta secuencia exacta:
+
+```
+[ Cliente Real de VALORANT ]
+         │ (Fija un agente o cambia la puntuación)
+         ▼
+[ Riot Client local (lockfile) ]
+         │
+         │ (1. El backend consulta la API local cada 2 segundos)
+         ▼
+[ NestJS (ValorantLocalService) ]
+         │
+         │ (2. Detecta el cambio e invoca gateway.updateStatus)
+         ▼
+[ Gateway WebSockets ]
+         │
+         │ (3. server.emit("valorant_status", data) - Lanza el evento por red)
+         ▼
+[ Navegador Web (script.js) ]
+         │
+         │ (4. socket.on("valorant_status") - Captura y parsea los datos)
+         ▼
+[ Modificación del DOM ] (5. Dibuja retratos, actualiza barras de sinergia)
+```
+
+1. **El Cliente Local actualiza su memoria**: Cuando un jugador pre-selecciona un agente, el cliente de Riot cambia sus datos de presencia local.
+2. **El Escáner del Backend lee los datos**: Cada 2 segundos, `checkStatus()` en NestJS lee esta presencia codificada en Base64, la descifra, y obtiene la información.
+3. **Se retransmite por WebSockets**: NestJS emite los datos del estado a través de la conexión WebSocket activa.
+4. **La Web reacciona**: El navegador recibe el evento, ejecuta el código de renderizado y redibuja la interfaz visual utilizando Javascript para manipular el árbol DOM (Document Object Model) del navegador.
+
+---
+
+### C. El Flujo de Escritura: De la Web al Juego (Interactividad)
+
+Cuando haces clic en la interfaz web para fijar a un personaje, el flujo de datos viaja hacia el interior del juego real:
+
+```
+[ Navegador Web ]
+         │ (Haces clic en Jett y pulsas "Lock Agent")
+         ▼
+[ Frontend (script.js) ]
+         │ (1. socket.emit("pregame_lock", { pregameMatchId, agentUuid }))
+         ▼
+[ Gateway WebSockets (NestJS) ]
+         │ (2. Recibe el evento y lo inyecta en pregameLock$)
+         ▼
+[ Backend (ValorantLocalService) ]
+         │ (3. La suscripción se activa al recibir datos en el flujo)
+         │ (4. Realiza un POST HTTPS a la API local del juego de Riot)
+         ▼
+[ API LCU de VALORANT ] ---> [ El cliente real de VALORANT bloquea a Jett ]
+```
+
+1. **La web lanza el evento**: Al presionar el botón, la web emite la orden:
+   ```javascript
+   socket.emit('pregame_lock', { pregameMatchId, agentUuid });
+   ```
+2. **NestJS intercepta la orden**: En el Gateway backend, se asocia el evento mediante `@SubscribeMessage("pregame_lock")` y se inyecta en un objeto observable `pregameLock$`.
+3. **El servicio de radar local realiza el comando**: El servicio lee la orden de ese canal y ejecuta una llamada HTTP `POST` a la API LCU de Riot:
+   ```typescript
+   await this.httpService.post(`${glzUrl}/pregame/v1/matches/${matchId}/lock/${agentUuid}`, {}, { headers });
+   ```
+4. **El juego real responde**: El cliente interno del juego procesa la llamada HTTP de NestJS igual que si hubieras pulsado con el ratón dentro del propio menú del juego. Jett se bloquea en tu lobby real de VALORANT.
+
+### D. ¿Cómo es esto posible? (La API LCU)
+El juego real de VALORANT está estructurado internamente como una arquitectura de microservicios locales. El ejecutable visual del juego es simplemente una interfaz que se comunica con una API REST HTTPS local levantada por el propio proceso del cliente de Riot. 
+
+Al leer el archivo secreto `lockfile`, LoadoutAI extrae la contraseña e IP dinámicas del puerto local y se comunica con esta API secreta (LCU), permitiendo controlar el juego de forma programática.
+
+---
+
+## 5. El Salto de Sintaxis: Comparativa Directa JS (Express) vs NestJS (TypeScript)
+
+Escribir JavaScript para el navegador (`public/script.js`) es muy directo: declaras variables, manipulas el DOM con `document.getElementById` y haces peticiones con `fetch`. Sin embargo, cuando miras por primera vez el código backend de NestJS en TypeScript, parece un lenguaje de otro mundo debido a los decoradores (`@`), las clases, los tipos y la inyección de dependencias.
+
+A continuación, comparamos los conceptos de JS tradicional y NestJS lado a lado para hacer este salto de sintaxis muy fácil de entender.
+
+---
+
+### A. Estructura de Servidor y Rutas (Express vs NestJS)
+
+En un backend clásico con **JavaScript + Express**, todo se escribe de forma imperativa en uno o pocos archivos. En **NestJS**, se usa una arquitectura orientada a objetos (clases) y decoradores (declarativa).
+
+#### 1. Cómo se levanta el servidor
+En **Express (JS)**:
+```javascript
+const express = require('express');
+const app = express();
+app.use(express.static('public'));
+app.listen(3000, () => console.log('Servidor corriendo en el puerto 3000'));
+```
+
+En **NestJS (TypeScript)**:
+NestJS separa la inicialización (el arranque) de la configuración de la aplicación.
+* El archivo [main.ts](file:///C:/Users/chumi/OneDrive/Escritorio/LoadoutAI/valorant-ai/src/main.ts) inicia la aplicación:
+  ```typescript
+  async function bootstrap() {
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+    app.useStaticAssets(join(__dirname, "..", "public")); // Expone la carpeta public
+    await app.listen(3000);
+  }
+  bootstrap();
+  ```
+* El archivo [app.module.ts](file:///C:/Users/chumi/OneDrive/Escritorio/LoadoutAI/valorant-ai/src/app.module.ts) actúa como el "organizador" central, declarando todos los controladores y servicios que usará el servidor.
+
+#### 2. Cómo se define una ruta HTTP
+En **Express (JS)**:
+```javascript
+app.get('/agents', (req, res) => {
+  res.json([{ name: 'Jett' }, { name: 'Phoenix' }]);
+});
+```
+
+En **NestJS (TypeScript)**:
+Se utilizan clases y decoradores. Mira el archivo [agents.controller.ts](file:///C:/Users/chumi/OneDrive/Escritorio/LoadoutAI/valorant-ai/src/valorant_api/agents/agents.controller.ts):
+```typescript
+@Controller("agents") // 1. Indica que todas las rutas de esta clase empiezan por /agents
+export class AgentsController {
+  constructor(private readonly agentsService: AgentsService) {}
+
+  @Get() // 2. Indica que un método GET a /agents llamará a esta función
+  loadAgents() {
+    return this.agentsService.loadAgents(); // 3. Devuelve los datos directamente
+  }
+}
+```
+
+---
+
+### B. ¿Qué son los Decoradores? (Las palabras con `@`)
+
+Los decoradores son una característica especial de TypeScript. Son simplemente **funciones que añaden metadatos o superpoderes** a una clase, método o propiedad.
+
+* **`@Injectable()`**: Le dice a NestJS: *"Esta clase es un servicio. Puedes crearla una sola vez en memoria y compartirla con cualquier otra clase que la necesite"*.
+* **`@Controller('ruta')`**: Convierte una clase normal en un receptor de peticiones HTTP (rutas GET, POST, DELETE, etc.).
+* **`@WebSocketGateway()`**: Convierte una clase normal en un servidor de WebSockets (Socket.io) para comunicación en tiempo real.
+* **`@SubscribeMessage('evento')`**: Escucha un mensaje de WebSocket específico enviado desde la web.
+
+> [!NOTE]
+> En JavaScript tradicional no tienes decoradores; tenías que registrar cada ruta manualmente: `app.get('/ruta', funcion)`. En NestJS, con solo poner `@Get()` encima de un método, NestJS se encarga de crear la ruta por debajo.
+
+---
+
+### C. TypeScript y Tipado Estricto (Los dos puntos `:`)
+
+En el navegador escribes `const agent = data;` sin importar qué contiene `data`. En TypeScript, añadimos tipos después de los dos puntos (`:`) para que el editor de código nos avise si cometemos un error antes de ejecutar el programa.
+
+* **Tipado simple**:
+  ```typescript
+  let credits: number = 3000;
+  let agentName: string = "Jett";
+  let isAlive: boolean = true;
+  ```
+* **Tipado de funciones**:
+  ```typescript
+  // Indica que esta función DEBE devolver un número
+  getWeaponCost(weaponName: string): number {
+    if (weaponName === "Vandal") return 2900;
+    return 0;
+  }
+  ```
+* **Interfaces**: Son plantillas para definir la estructura de un objeto. Si intentas crear un agente sin `id` o sin `name`, TypeScript dará error de compilación.
+  ```typescript
+  interface Agent {
+    id: string;
+    name: string;
+    role: string;
+  }
+  ```
+
+---
+
+### D. Inyección de Dependencias (El Constructor Mágico)
+
+En JavaScript, si una clase necesita usar otra, creas una instancia manualmente:
+```javascript
+// JS tradicional
+class ValorantGateway {
+  constructor() {
+    this.agentsService = new AgentsService(); // Creación manual y acoplada
+  }
+}
+```
+En NestJS, **tú nunca creas servicios manualmente con `new`**. NestJS tiene un contenedor de memoria que gestiona todos los servicios. En el constructor, tú solo dices *"necesito tal servicio"* y NestJS te lo inyecta automáticamente:
+
+```typescript
+// NestJS (TS)
+constructor(
+  private readonly agentsService: AgentsService,
+  private readonly contentService: ContentService
+) {}
+```
+> [!TIP]
+> La palabra `private readonly` delante del parámetro en el constructor es un atajo de TypeScript. Hace dos cosas a la vez:
+> 1. Declara la variable `this.agentsService` en la clase.
+> 2. Le asigna el valor recibido cuando NestJS instancia la clase.
+> Esto te ahorra tener que escribir `this.agentsService = agentsService;` dentro del cuerpo del constructor.
+
+---
+
+### E. RxJS (Observables) frente a Promesas
+
+En el JavaScript del frontend estás acostumbrado a usar **Promesas** con `fetch` o `async/await`. Una Promesa representa una operación que se ejecuta **una sola vez** (como pedir datos de un agente).
+
+NestJS utiliza la librería **RxJS**, que trabaja con **Observables**. 
+* **Observable**: Es un flujo continuo de datos a lo largo del tiempo. Es como un río de agua: no te da un vaso de agua una vez, sino una corriente constante de datos a la que te puedes suscribir.
+* En `valorant.gateway.ts` declaramos:
+  ```typescript
+  readonly pregameLock$ = new Subject<{ agentUuid: string }>();
+  ```
+  Un `Subject` es un tipo especial de Observable que funciona como un megáfono: cuando el usuario de la web pulsa "Lock Agent", el gateway emite ese evento al canal con `this.pregameLock$.next(data)`. El servicio local, que está suscrito a ese canal, reacciona inmediatamente ejecutando la llamada HTTPS al juego de Riot.
+* **`firstValueFrom`**: Si queremos convertir un Observable en una Promesa tradicional para poder usar el clásico `await`, usamos esta utilidad de RxJS:
+  ```typescript
+  // Convierte el flujo HTTP en una promesa y espera su único resultado
+  const response = await firstValueFrom(this.httpService.get(url));
+  ```
+
+---
+
+## 6. ¿Cómo se Conecta el Backend con el JavaScript del Frontend?
+
+Esta es la clave para entender cómo una acción en tu navegador se refleja en tu partida de VALORANT en tiempo real. La comunicación se realiza mediante dos vías: **REST API (HTTP)** para peticiones puntuales, y **WebSockets (Socket.io)** para eventos rápidos y bidireccionales.
+
+### A. La Conexión Inicial por WebSockets (El Handshake)
+
+Cuando abres la web en tu navegador:
+1. **Frontend JS** (`public/script.js`):
+   ```javascript
+   // El navegador intenta conectarse al servidor WebSocket en el puerto 3000
+   const socket = io('http://localhost:3000');
+   ```
+2. **Backend NestJS** (`src/gateway/valorant.gateway.ts`):
+   ```typescript
+   @WebSocketGateway({ cors: { origin: "*" } }) // Levanta el servidor WebSocket
+   export class ValorantGateway implements OnGatewayConnection {
+     // Este método se ejecuta automáticamente cuando el navegador se conecta
+     handleConnection(client: Socket) {
+       console.log('¡Un navegador se ha conectado!');
+       // Le enviamos inmediatamente el estado actual para que pinte la pantalla
+       client.emit("valorant_status", { status: this.currentStatus });
+     }
+   }
+   ```
+
+---
+
+### B. Tabla de Correspondencia de Eventos (WebSocket)
+
+Aquí tienes el mapa exacto de qué mensajes viajan por la red de WebSockets, quién los envía, quién los recibe y qué datos contienen:
+
+| Evento | Quién lo Emite (Origen) | Quién lo Escucha (Destino) | Estructura de Datos (Payload) | Propósito y Acción en el Sistema |
+| :--- | :--- | :--- | :--- | :--- |
+| **`valorant_status`** | Backend `ValorantGateway` | Frontend `script.js` | `{ status: 'PREGAME', map: 'Ascent', myTeam: [...] }` | Actualiza la interfaz del navegador según el bucle del juego (Lobby, Selección o Partida). |
+| **`pregame_select`** | Frontend `script.js` | Backend `ValorantGateway` | `{ agentUuid: 'a3a5...' }` | El usuario hace clic sobre un agente en la web (pre-selección / cursor). |
+| **`pregame_lock`** | Frontend `script.js` | Backend `ValorantGateway` | `{ agentUuid: 'a3a5...' }` | El usuario hace clic en "Lock Agent" para fijar un personaje de forma definitiva. |
+| **`buy_phase`** | Backend `ValorantGateway` | Frontend `script.js` | `{ available: true, time: 30, round: 3 }` | Indica que ha empezado la fase de compra y activa el temporizador en la web. |
+| **`update_ingame_credits`** | Frontend `script.js` | Backend `ValorantGateway` | `{ credits: 2900 }` | El usuario cambia manualmente sus créditos en el simulador para que la IA recalcule la compra. |
+| **`ml_buy_recommendations`** | Backend `ValorantGateway` | Frontend `script.js` | `{ weapon: 'Vandal', shield: 'Heavy', cost: 3900 }` | Envía la compra recomendada por la Inteligencia Artificial (Python) a la pantalla del usuario. |
+| **`loading_progress`** | Backend `ValorantGateway` | Frontend `script.js` | `{ progress: 50 }` | Muestra el progreso de descarga de la base de datos de Riot en la pantalla de carga. |
+
+---
+
+### C. Ciclo de Vida de una Acción: El Flujo Completo de "Pregame Lock"
+
+Para ver cómo encaja cada pieza del puzle, sigamos el viaje de una acción desde el clic en la web hasta la API local de Riot:
+
+```
+[ PANTALLA WEB ] (Haces clic en Jett y pulsas "Lock Agent")
+       │
+       │ 1. Evento Click en el navegador
+       ▼
+[ public/script.js ]
+       │
+       │ 2. socket.emit('pregame_lock', { agentUuid: 'f29c...' })
+       ▼
+~~~~~~~~~ RED LOCAL (WEBSOCKETS) ~~~~~~~~~
+       ▼
+[ src/gateway/valorant.gateway.ts ]
+       │
+       │ 3. @SubscribeMessage('pregame_lock') captura el evento.
+       │ 4. Lanza el valor al Subject reactivo:
+       │    this.pregameLock$.next({ agentUuid })
+       ▼
+[ src/gateway/valorant-local.service.ts ]
+       │
+       │ 5. Suscripción activa en onModuleInit:
+       │    this.gateway.pregameLock$.subscribe(data => { ... })
+       │ 6. Lee el puerto y contraseña del 'lockfile' local de tu PC.
+       │ 7. Envía un POST HTTPS seguro al cliente local de Riot:
+       │    POST https://127.0.0.1:puerto/pregame/v1/matches/MatchID/lock/agentUuid
+       ▼
+[ CLIENTE DE VALORANT (Juego Real) ]
+       │
+       │ 8. El juego recibe la orden HTTPS de NestJS y bloquea a Jett.
+       │ 9. El estado de la partida cambia internamente.
+       ▼
+[ Bucle checkStatus() en NestJS ] (Se ejecuta cada 2 segundos)
+       │
+       │ 10. Detecta que Jett está bloqueada.
+       │ 11. Ejecuta gateway.updateStatus('PREGAME', nuevoEstado)
+       ▼
+~~~~~~~~~ RED LOCAL (WEBSOCKETS) ~~~~~~~~~
+       ▼
+[ public/script.js ]
+       │
+       │ 12. socket.on('valorant_status') recibe el nuevo estado.
+       │ 13. renderTeam() redibuja la ranura del jugador con Jett y la marca como bloqueada.
+       ▼
+[ INTERFAZ ACTUALIZADA EN PANTALLA ]
+```
+
+---
+
+### D. ¿Cómo se comunican por HTTP (REST)?
+
+Aparte de WebSockets, cuando el backend necesita descargar datos oficiales (como los iconos de las armas o descripciones de habilidades), el frontend o el gateway hacen llamadas HTTP tradicionales.
+
+#### Ejemplo: Cargar la base de datos de Agentes
+1. El frontend JS hace un fetch o solicita la base de datos:
+   ```javascript
+   // En public/script.js
+   const response = await fetch('http://localhost:3000/agents');
+   const agents = await response.json();
+   ```
+2. El controlador de NestJS recibe la petición HTTP GET en `/agents`:
+   ```typescript
+   // En src/valorant_api/agents/agents.controller.ts
+   @Get()
+   loadAgents() {
+     return this.agentsService.loadAgents(); // Pide los datos al servicio
+   }
+   ```
+3. El servicio NestJS realiza la petición HTTP a los servidores oficiales de Riot en la nube:
+   ```typescript
+   // En src/valorant_api/agents/agents.service.ts
+   loadAgents() {
+     // Hace un GET a la API oficial de Valorant-API.com
+     return this.httpService.get('https://valorant-api.com/v1/agents?isPlayableCharacter=true')
+       .pipe(map(response => response.data.data)); // Filtra y extrae solo la lista
+   }
+   ```
+
+Con esta arquitectura híbrida, LoadoutAI consigue ser **ultrarrápido** (gracias a los WebSockets para la partida en curso) y **consistente** (usando APIs REST estándar para consultar y almacenar datos históricos).
+
+
