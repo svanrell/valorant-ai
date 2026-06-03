@@ -67,6 +67,8 @@ let activeTab = 'all';
 let agentsList = []; // dynamic from valorant-api
 let selectedMap = 'Ascent';
 let currentDraftSlot = 0; // index of player card currently targeted for manual pick (0-4)
+let livePregameMatchId = null;
+let currentIngameRound = 1;
 
 // 5 slots representing players (Simulator or Live)
 let myTeam = [
@@ -277,6 +279,10 @@ function selectAgent(agent) {
         lockBtn.disabled = isLiveMode && currentDraftSlot !== 0; // lock disabled if live mode and not Ally 1
         lockBtn.innerText = 'Lock Agent';
     }
+
+    if (isLiveMode && livePregameMatchId) {
+        socket.emit('pregame_select', { pregameMatchId: livePregameMatchId, agentUuid: agent.uuid.toLowerCase() });
+    }
 }
 
 // Lock in the agent to the selected slot (for Simulation mode)
@@ -284,18 +290,24 @@ function lockSelection() {
     if (!activeSelectedAgent) return;
     const agentId = activeSelectedAgent.uuid.toLowerCase();
 
-    // Set agent to targeted slot
-    myTeam[currentDraftSlot].agentId = agentId;
-    myTeam[currentDraftSlot].state = 'locked';
-    myTeam[currentDraftSlot].playerCardId = 'locked';
+    if (isLiveMode) {
+        if (livePregameMatchId) {
+            socket.emit('pregame_lock', { pregameMatchId: livePregameMatchId, agentUuid: agentId });
+        }
+    } else {
+        // Set agent to targeted slot
+        myTeam[currentDraftSlot].agentId = agentId;
+        myTeam[currentDraftSlot].state = 'locked';
+        myTeam[currentDraftSlot].playerCardId = 'locked';
 
-    // Find next open slot
-    findNextOpenSlot();
+        // Find next open slot
+        findNextOpenSlot();
 
-    // Refresh team and synergy
-    renderTeam();
-    renderAgentsGrid();
-    updateSynergy();
+        // Refresh team and synergy
+        renderTeam();
+        renderAgentsGrid();
+        updateSynergy();
+    }
 }
 
 function findNextOpenSlot() {
@@ -324,7 +336,15 @@ function renderTeam() {
             card.classList.add('selecting');
         }
 
-        // Check card background from Riot Assets
+        // Apply player card background if available
+        if (player.playerCardId && player.playerCardId !== 'locked') {
+            card.style.backgroundImage = `linear-gradient(rgba(11, 18, 25, 0.85), rgba(11, 18, 25, 0.95)), url(https://media.valorant-api.com/playercards/${player.playerCardId}/wideart.png)`;
+            card.style.backgroundSize = 'cover';
+            card.style.backgroundPosition = 'center';
+        } else {
+            card.style.backgroundImage = 'none';
+        }
+
         if (player.agentId && agentsCache[player.agentId]) {
             count++;
         }
@@ -868,6 +888,8 @@ socket.on('valorant_status', (data) => {
         setConnectionState('live', 'Agent Selection');
         switchView('pregame');
         
+        livePregameMatchId = data.pregameMatchId;
+
         // Set map from server pregame matches
         if (data.mapName) {
             selectedMap = data.mapName;
@@ -879,7 +901,7 @@ socket.on('valorant_status', (data) => {
         if (data.players && data.players.length > 0) {
             myTeam = data.players.map((p, index) => ({
                 puuid: p.puuid,
-                name: p.puuid === 'YOUR_PUUID' ? 'You' : `Ally ${index + 1}`,
+                name: p.puuid === data.myPuuid ? 'You' : `Ally ${index + 1}`,
                 agentId: p.agentId ? p.agentId.toLowerCase() : null,
                 state: p.state, // "", "selected", "locked"
                 level: p.level || 0,
@@ -897,6 +919,8 @@ socket.on('valorant_status', (data) => {
         setConnectionState('live', 'In Game Match');
         switchView('ingame');
         
+        livePregameMatchId = null;
+
         if (data.mapName) {
             selectedMap = data.mapName;
             mapSelect.value = selectedMap;
@@ -909,10 +933,19 @@ socket.on('valorant_status', (data) => {
             document.getElementById('ingameMode').innerText = data.mode;
         }
         
-        // Set locked status for display
-        myTeam.forEach(p => {
-            p.state = 'locked';
-        });
+        // Map live player list
+        if (data.players && data.players.length > 0) {
+            myTeam = data.players.map((p, index) => ({
+                puuid: p.puuid,
+                name: p.puuid === data.myPuuid ? 'You' : `Ally ${index + 1}`,
+                agentId: p.agentId ? p.agentId.toLowerCase() : null,
+                state: p.state,
+                level: p.level || 0,
+                rank: p.rank || 0,
+                playerCardId: p.playerCardId || ''
+            }));
+        }
+
         renderTeam();
         updateSynergy();
 
@@ -939,43 +972,90 @@ socket.on('valorant_status', (data) => {
     }
 });
 
-// Listen for live Buy Phase updates
-socket.on('buy_phase', (data) => {
-    console.log("WebSocket buy_phase event:", data);
-    
-    let rec = "Full Buy: Phantom + Light Shield + Abilities.";
+function getBuyRecommendationText(credits, round) {
+    if (round === 1 || round === 13) {
+        return "Pistol Round: Buy Ghost + Abilities, or Light Shield + Classic + Abilities.";
+    }
+    if (round >= 25) {
+        return "OVERTIME: Buy everything! Vandal/Phantom + Heavy Shield + Abilities.";
+    }
+    if (credits < 1500) {
+        return "Eco Round: Full save credits to guarantee a minimum buy next round (threshold 3900+).";
+    } else if (credits >= 1500 && credits < 3900) {
+        return "Force/Semi-Buy: Buy Spectre + Light Armor. Play close-range angles.";
+    } else {
+        const rifle = selectedMap === 'Breeze' ? 'VANDAL' : 'PHANTOM';
+        return `Full Buy: Purchase ${rifle} + Heavy Armor + Full Abilities. Play standard lines-of-sight.`;
+    }
+}
+
+function updateBuyRecommendations(credits, round) {
     let wName = "PHANTOM";
     let wCost = 2900;
     let sName = "LIGHT SHIELD";
     let sCost = 400;
     let aName = "FULL BUY";
     let aCost = 300;
-    
-    if (data.round === 1 || data.round === 13) {
-        rec = "Pistol Round: Buy Ghost + Abilities, or Light Shield + Classic + Abilities.";
+
+    if (round === 1 || round === 13) {
         wName = "GHOST";
         wCost = 500;
         sName = "NO SHIELD";
         sCost = 0;
         aName = "ABILITIES";
         aCost = 300;
-    } else if (data.round === 2 || data.round === 14) {
-        rec = "Eco/Anti-eco: If won, Spectre + Light Shield. If lost, save credits (Ghost only).";
-        wName = "SPECTRE";
-        wCost = 1600;
-        sName = "LIGHT SHIELD";
-        sCost = 400;
-        aName = "ABILITIES";
-        aCost = 200;
-    } else if (data.round >= 25) {
-        rec = "OVERTIME: Buy everything! Vandal + Heavy Shield + Abilities.";
-        wName = "VANDAL";
+    } else if (round >= 25) {
+        wName = selectedMap === 'Breeze' ? 'VANDAL' : 'PHANTOM';
         wCost = 2900;
         sName = "HEAVY SHIELD";
         sCost = 1000;
         aName = "FULL BUY";
         aCost = 300;
+    } else {
+        if (credits < 1500) {
+            wName = "CLASSIC";
+            wCost = 0;
+            sName = "NO SHIELD";
+            sCost = 0;
+            aName = "SAVE";
+            aCost = 0;
+        } else if (credits >= 1500 && credits < 3900) {
+            wName = "SPECTRE";
+            wCost = 1600;
+            sName = "LIGHT SHIELD";
+            sCost = 400;
+            aName = "ABILITIES";
+            aCost = 200;
+        } else {
+            wName = selectedMap === 'Breeze' ? 'VANDAL' : 'PHANTOM';
+            wCost = 2900;
+            sName = "HEAVY SHIELD";
+            sCost = 1000;
+            aName = "FULL BUY";
+            aCost = 300;
+        }
     }
+
+    const totalCost = wCost + sCost + aCost;
+    
+    // Update elements
+    document.getElementById('ingameBuyWeaponName').innerText = wName;
+    document.getElementById('ingameBuyWeaponCost').innerText = `(${wCost})`;
+    document.getElementById('ingameBuyShieldName').innerText = sName;
+    document.getElementById('ingameBuyShieldCost').innerText = `(${sCost})`;
+    document.getElementById('ingameBuyAbilitiesName').innerText = aName;
+    document.getElementById('ingameBuyAbilitiesCost').innerText = `(${aCost})`;
+    document.getElementById('ingameBuyTotalCost').innerText = totalCost.toString();
+    document.getElementById('ingameRecWeapon').innerText = wName;
+}
+
+// Listen for live Buy Phase updates
+socket.on('buy_phase', (data) => {
+    console.log("WebSocket buy_phase event:", data);
+    
+    currentIngameRound = data.round;
+    const creditsInput = document.getElementById('ingameCreditsInput');
+    const credits = parseInt(creditsInput.value) || 0;
 
     // Estimate side based on round
     const side = data.round <= 12 ? 'ATTACKER' : 'DEFENDER';
@@ -992,16 +1072,15 @@ socket.on('buy_phase', (data) => {
             : "Hold Hookah aggressively with Raze grenade. Viper wall screen B Long.";
     }
 
-    // Calculate total cost
-    const totalCost = wCost + sCost + aCost;
+    updateBuyRecommendations(credits, data.round);
 
     if (data.available) {
         // Update floating overlay
-        showBuyOverlay(data.round, data.time, rec);
+        const recText = getBuyRecommendationText(credits, data.round);
+        showBuyOverlay(data.round, data.time, recText);
         
         // Update in-game HUD widgets
         document.getElementById('ingameRoundHeader').innerText = `Round ${data.round} - BUY PHASE`;
-        document.getElementById('ingameRecWeapon').innerText = wName;
         
         // Set agent name based on first player
         let myAgent = 'JETT';
@@ -1009,18 +1088,8 @@ socket.on('buy_phase', (data) => {
             myAgent = agentsCache[myTeam[0].agentId].name;
         }
         document.getElementById('ingameRecAgent').innerText = myAgent;
-        document.getElementById('ingameRecCreds').innerText = totalCost.toString();
         document.getElementById('ingameRecSide').innerText = side;
         document.getElementById('ingameRecSide').style.color = side === 'ATTACKER' ? 'var(--color-red)' : 'var(--color-cyan)';
-        
-        // Details
-        document.getElementById('ingameBuyWeaponName').innerText = wName;
-        document.getElementById('ingameBuyWeaponCost').innerText = `(${wCost})`;
-        document.getElementById('ingameBuyShieldName').innerText = sName;
-        document.getElementById('ingameBuyShieldCost').innerText = `(${sCost})`;
-        document.getElementById('ingameBuyAbilitiesName').innerText = aName;
-        document.getElementById('ingameBuyAbilitiesCost').innerText = `(${aCost})`;
-        document.getElementById('ingameBuyTotalCost').innerText = totalCost.toString();
         
         // Coach tip
         document.getElementById('ingameCoachText').innerText = coachTip;
@@ -1029,7 +1098,7 @@ socket.on('buy_phase', (data) => {
         const minutes = Math.floor(data.time / 60);
         const seconds = data.time % 60;
         document.getElementById('ingameBuyTimerDigits').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('ingameBuyTimerBar').style.width = `${(data.time / 30) * 100}%`;
+        document.getElementById('ingameBuyTimerBar').style.width = `${(data.time / (data.round === 1 || data.round === 13 || data.round >= 25 ? 45 : 30)) * 100}%`;
         document.getElementById('ingameBuyTimerDigits').style.color = 'var(--color-cyan)';
     } else {
         hideBuyOverlay();
@@ -1039,6 +1108,12 @@ socket.on('buy_phase', (data) => {
         document.getElementById('ingameBuyTimerBar').style.width = `0%`;
     }
 });
+
+// Bind credits input change listener
+document.getElementById('ingameCreditsInput').oninput = (e) => {
+    const credits = parseInt(e.target.value) || 0;
+    updateBuyRecommendations(credits, currentIngameRound);
+};
 
 // Initialize application
 initData();

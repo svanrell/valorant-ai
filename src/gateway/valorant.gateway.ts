@@ -5,7 +5,7 @@ import {
   OnGatewayConnection,
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
-import { firstValueFrom } from "rxjs";
+import { firstValueFrom, Subject } from "rxjs";
 import { ContentService } from "../valorant_api/content/content.service";
 import { AgentsService } from "../valorant_api/agents/agents.service";
 import { MapsService } from "../valorant_api/maps/maps.service";
@@ -19,6 +19,9 @@ import { WeaponsService } from "../valorant_api/weapons/weapons.service";
 export class ValorantGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
+
+  readonly pregameSelect$ = new Subject<{ pregameMatchId: string; agentUuid: string }>();
+  readonly pregameLock$ = new Subject<{ pregameMatchId: string; agentUuid: string }>();
 
   private currentStatus: string = "CLOSED";
   private extraData: Record<string, unknown> = {};
@@ -176,5 +179,15 @@ export class ValorantGateway implements OnGatewayConnection {
         error: errorMessage,
       });
     }
+  }
+
+  @SubscribeMessage("pregame_select")
+  handlePregameSelect(client: Socket, data: { pregameMatchId: string; agentUuid: string }) {
+    this.pregameSelect$.next(data);
+  }
+
+  @SubscribeMessage("pregame_lock")
+  handlePregameLock(client: Socket, data: { pregameMatchId: string; agentUuid: string }) {
+    this.pregameLock$.next(data);
   }
 }

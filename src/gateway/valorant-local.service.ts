@@ -110,6 +110,26 @@ interface ValorantVersionResponse {
   };
 }
 
+interface CoreGamePlayerResponse {
+  Subject: string;
+  MatchID: string;
+}
+
+interface CoreGamePlayer {
+  Subject: string;
+  TeamID: string;
+  CharacterID: string;
+  PlayerIdentity?: {
+    AccountLevel: number;
+    PlayerCardID: string;
+  };
+}
+
+interface CoreGameMatchResponse {
+  MatchID: string;
+  Players: CoreGamePlayer[];
+}
+
 @Injectable()
 export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ValorantLocalService.name);
@@ -142,6 +162,14 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
     this.intervalId = setInterval(() => {
       void this.checkStatus();
     }, 2000);
+
+    this.gateway.pregameSelect$.subscribe(async (data) => {
+      await this.selectAgent(data.pregameMatchId, data.agentUuid);
+    });
+
+    this.gateway.pregameLock$.subscribe(async (data) => {
+      await this.lockAgent(data.pregameMatchId, data.agentUuid);
+    });
   }
 
   onModuleDestroy() {
@@ -165,6 +193,98 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
       url: `${protocol}://127.0.0.1:${port}`,
       token: `Basic ${authBase64}`,
     };
+  }
+
+  private async getRemoteConfig() {
+    const credentials = this.getCredentials();
+    if (!credentials) return null;
+
+    const config = {
+      headers: { Authorization: credentials.token },
+      httpsAgent: this.httpsAgent,
+    };
+
+    try {
+      const tokenRes = await firstValueFrom(
+        this.httpService.get<EntitlementsTokenResponse>(
+          `${credentials.url}/entitlements/v1/token`,
+          config,
+        ),
+      );
+      const accessToken = tokenRes.data.accessToken;
+      const entitlementsToken = tokenRes.data.token;
+
+      const versionRes = await firstValueFrom(
+        this.httpService.get<ValorantVersionResponse>(
+          "https://valorant-api.com/v1/version",
+        ),
+      );
+      const clientVersion = versionRes.data.data.riotClientVersion;
+
+      const region = process.env.VALORANT_REGION || "eu";
+      const shard = region === "latam" || region === "br" ? "na" : region;
+      const glzUrl = `https://glz-${region}-1.${shard}.a.pvp.net`;
+
+      return {
+        glzUrl,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "X-Riot-Entitlements-JWT": entitlementsToken,
+          "X-Riot-ClientVersion": clientVersion,
+          "X-Riot-ClientPlatform":
+            "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9",
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error getting remote config: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  async selectAgent(pregameMatchId: string, agentUuid: string): Promise<boolean> {
+    const remote = await this.getRemoteConfig();
+    if (!remote) return false;
+
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          `${remote.glzUrl}/pregame/v1/matches/${pregameMatchId}/select/${agentUuid}`,
+          {},
+          { headers: remote.headers },
+        ),
+      );
+      this.logger.log(`Selected agent ${agentUuid} in pregame match ${pregameMatchId}`);
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error selecting agent: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    }
+  }
+
+  async lockAgent(pregameMatchId: string, agentUuid: string): Promise<boolean> {
+    const remote = await this.getRemoteConfig();
+    if (!remote) return false;
+
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          `${remote.glzUrl}/pregame/v1/matches/${pregameMatchId}/lock/${agentUuid}`,
+          {},
+          { headers: remote.headers },
+        ),
+      );
+      this.logger.log(`Locked agent ${agentUuid} in pregame match ${pregameMatchId}`);
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error locking agent: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    }
   }
 
   private async checkStatus() {
@@ -281,19 +401,98 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               playerCardId: p.PlayerIdentity?.PlayerCardID,
             }));
 
-            this.updateStatus("PREGAME", { matchId, pregameMatchId, players, mapName });
+            this.updateStatus("PREGAME", { matchId, pregameMatchId, players, mapName, myPuuid: puuid });
           } catch (error) {
             this.logger.error(
               `Error querying pregame selection details: ${error instanceof Error ? error.message : String(error)}`,
             );
-            this.updateStatus("PREGAME", { matchId });
+            this.updateStatus("PREGAME", { matchId, myPuuid: puuid });
           }
         } else if (loopState === "INGAME") {
           const mapPath = privateData.matchPresenceData?.matchMap || "";
           const queueId = privateData.matchPresenceData?.queueId || "";
           const mapName = MAPS_MAP[mapPath] || "Unknown Map";
           const mode = QUEUES_MAP[queueId] || "Unknown Mode";
-          this.updateStatus("INGAME", { mapName, mode });
+
+          let players: any[] = [];
+          try {
+            const tokenRes = await firstValueFrom(
+              this.httpService.get<EntitlementsTokenResponse>(
+                `${credentials.url}/entitlements/v1/token`,
+                config,
+              ),
+            );
+            const accessToken = tokenRes.data.accessToken;
+            const entitlementsToken = tokenRes.data.token;
+
+            const versionRes = await firstValueFrom(
+              this.httpService.get<ValorantVersionResponse>(
+                "https://valorant-api.com/v1/version",
+              ),
+            );
+            const clientVersion = versionRes.data.data.riotClientVersion;
+
+            const region = process.env.VALORANT_REGION || "eu";
+            const shard = region === "latam" || region === "br" ? "na" : region;
+            const glzUrl = `https://glz-${region}-1.${shard}.a.pvp.net`;
+
+            const remoteConfig = {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                "X-Riot-Entitlements-JWT": entitlementsToken,
+                "X-Riot-ClientVersion": clientVersion,
+                "X-Riot-ClientPlatform":
+                  "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9",
+              },
+            };
+
+            const coregamePlayer = await firstValueFrom(
+              this.httpService.get<CoreGamePlayerResponse>(
+                `${glzUrl}/core-game/v1/players/${puuid}`,
+                remoteConfig,
+              ),
+            );
+            const coregameMatchId = coregamePlayer.data.MatchID;
+
+            const coregameMatch = await firstValueFrom(
+              this.httpService.get<CoreGameMatchResponse>(
+                `${glzUrl}/core-game/v1/matches/${coregameMatchId}`,
+                remoteConfig,
+              ),
+            );
+
+            const myPlayerInGame = coregameMatch.data.Players.find(p => p.Subject === puuid);
+            const myTeamId = myPlayerInGame ? myPlayerInGame.TeamID : null;
+
+            const teammatePlayers = coregameMatch.data.Players.filter(p => p.TeamID === myTeamId);
+
+            players = teammatePlayers.map(p => {
+              const playerPresence = presences.data.presences?.find(presence => presence.puuid === p.Subject);
+              let rank = 0;
+              if (playerPresence && playerPresence.private) {
+                try {
+                  const decoded = Buffer.from(playerPresence.private, "base64").toString("utf8");
+                  const presenceData = JSON.parse(decoded);
+                  rank = presenceData.competitiveTier || 0;
+                } catch {}
+              }
+
+              return {
+                puuid: p.Subject,
+                agentId: p.CharacterID,
+                state: "locked",
+                level: p.PlayerIdentity?.AccountLevel || null,
+                rank: rank,
+                playerCardId: p.PlayerIdentity?.PlayerCardID,
+              };
+            });
+          } catch (error) {
+            this.logger.error(
+              `Error querying core-game match details: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
+
+          this.updateStatus("INGAME", { mapName, mode, players, myPuuid: puuid });
 
           const scoreAlly =
             privateData.partyOwnerMatchScoreAllyTeam ??
