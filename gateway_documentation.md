@@ -598,5 +598,3 @@ Aparte de WebSockets, cuando el backend necesita descargar datos oficiales (como
    ```
 
 Con esta arquitectura híbrida, LoadoutAI consigue ser **ultrarrápido** (gracias a los WebSockets para la partida en curso) y **consistente** (usando APIs REST estándar para consultar y almacenar datos históricos).
-
-
