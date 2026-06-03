@@ -55,7 +55,7 @@
 
     <!-- STATE 1: CLOSED / OFFLINE VIEW -->
     <div id="viewClosed" class="state-view active">
-        <div class="cyber-panel offline-card" style="width: 500px; padding: 40px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        <div class="cyber-panel offline-card">
             <div class="pulse-red" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--color-red); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 0 15px var(--glow-red);">
                 <span style="font-size: 30px; color: var(--color-red); font-weight: bold;">!</span>
             </div>
@@ -77,11 +77,11 @@
 
     <!-- STATE 2: MENU / LOBBY STANDBY VIEW -->
     <div id="viewMenu" class="state-view">
-        <div class="cyber-panel lobby-radar-card" style="width: 450px; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
-            <div class="radar-ping-container" style="position: relative; width: 80px; height: 80px; margin-bottom: 10px;">
-                <div class="radar-ring" style="position: absolute; top:0; left:0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-cyan); animation: radar-expand 2s infinite linear;"></div>
-                <div class="radar-ring" style="position: absolute; top:0; left:0; width: 100%; height: 100%; border-radius: 50%; border: 2px solid var(--color-cyan); animation: radar-expand 2s infinite linear; animation-delay: 1s;"></div>
-                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border-radius: 50%; background: var(--color-cyan); box-shadow: 0 0 10px var(--color-cyan);"></div>
+        <div class="cyber-panel lobby-radar-card">
+            <div class="radar-ping-container">
+                <div class="radar-ring"></div>
+                <div class="radar-ring"></div>
+                <div class="radar-ping-center"></div>
             </div>
             <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span style="color: var(--color-cyan); text-shadow: 0 0 8px var(--glow-cyan);">STANDBY</span></div>
             <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
@@ -95,7 +95,7 @@
             </button>
         </div>
         
-        <div class="cyber-panel" style="width: 450px; padding: 30px; display: flex; flex-direction: column; gap: 15px;">
+        <div class="cyber-panel lobby-cache-card">
             <div class="panel-header" style="background: transparent; border-bottom: 1px solid var(--border-cyber); padding: 0 0 10px 0;">
                 <span>Map Ingestion Cache</span>
             </div>
@@ -131,7 +131,7 @@
     <!-- STATE 3: PREGAME / AGENT DRAFT COACH VIEW -->
     <div id="viewPregame" class="state-view">
         <!-- Column 1: Team Configuration -->
-        <div class="cyber-panel">
+        <div class="cyber-panel pregame-team-panel">
             <div class="panel-header">
                 <span>My Team Composition</span>
                 <span id="teamCount" class="accent">0 / 5 Picked</span>
@@ -206,7 +206,7 @@
         </div>
 
         <!-- Column 3: Grid Selection -->
-        <div class="cyber-panel">
+        <div class="cyber-panel pregame-select-panel">
             <div class="panel-header">
                 <span>Select Hero Agent</span>
             </div>
@@ -262,13 +262,16 @@
     <!-- STATE 4: INGAME / LIVE MATCH HUD VIEW -->
     <div id="viewIngame" class="state-view">
         <!-- Left hud column -->
-        <div style="display: flex; flex-direction: column; gap: 15px; justify-content: space-between; height: 100%;">
+        <div class="hud-col-left">
             <!-- STRAT AI Recommendation Card -->
-            <div class="hud-panel" style="width: 420px; background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
+            <div class="hud-panel hud-panel-left">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 10px;">
                     <div>
-                        <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); letter-spacing: 1px;">STRAT AI</div>
-                        <div id="ingameRoundHeader" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MATCH START | ROUND 1</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); letter-spacing: 1px;">STRAT AI - <span id="ingameMap">Ascent</span></div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span id="ingameRoundHeader" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MATCH START | ROUND 1</span>
+                            <span id="ingameMode" style="font-size: 9px; color: var(--color-cyan); font-family: 'Orbitron', sans-serif; font-weight: 700; text-transform: uppercase;">COMPETITIVE</span>
+                        </div>
                     </div>
                     <div id="ingameBuyTimerDigits" style="font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--color-cyan); text-shadow: 0 0 6px var(--glow-cyan);">00:00</div>
                 </div>
@@ -338,7 +341,7 @@
             </div>
 
             <!-- ENEMY ECONOMY PREDICTION -->
-            <div class="hud-panel" style="width: 420px; background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
+            <div class="hud-panel hud-panel-left">
                 <div style="font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
                     ENEMY ECONOMY PREDICTION
                 </div>
@@ -361,15 +364,15 @@
             </div>
 
             <!-- LIVE COACH TIP -->
-            <div class="hud-panel" style="width: 420px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--color-cyan); border-radius: 6px; display: flex; flex-direction: row; align-items: stretch; overflow: hidden; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);">
-                <div style="width: 60px; background: var(--color-cyan); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--glow-cyan);">
+            <div class="hud-panel-coach">
+                <div class="hud-panel-coach-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#05080c" stroke-width="2">
                         <path d="M12 1v11 M9 5v3 M15 5v3 M19 9a7 7 0 0 1-14 0" />
                         <rect x="10" y="4" width="4" height="8" rx="2" fill="#05080c" />
                         <path d="M12 16v5 M8 21h8" />
                     </svg>
                 </div>
-                <div style="flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 5px;">
+                <div class="hud-panel-coach-content">
                     <div style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; color: var(--color-cyan); letter-spacing: 1.5px; text-transform: uppercase;">LIVE COACH TIP</div>
                     <p id="ingameCoachText" style="font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.4;">
                         PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.
@@ -379,9 +382,9 @@
         </div>
 
         <!-- Right hud column -->
-        <div style="display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; height: 100%;">
+        <div class="hud-col-right">
             <!-- ULT TRACKER -->
-            <div class="hud-panel" style="background: rgba(11, 18, 25, 0.85); border: 1px solid var(--border-cyber); border-radius: 6px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); width: 320px;">
+            <div class="hud-panel hud-panel-right">
                 <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
                     ULT TRACKER
                 </div>

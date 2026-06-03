@@ -212,7 +212,20 @@ header::after {
 #viewPregame.active {
     display: grid !important;
     grid-template-columns: 320px 1fr 400px;
+    grid-template-areas: "team dash select";
     gap: 20px;
+}
+
+.pregame-team-panel {
+    grid-area: team;
+}
+
+.dashboard-col {
+    grid-area: dash;
+}
+
+.pregame-select-panel {
+    grid-area: select;
 }
 
 #viewIngame.active {
@@ -1108,4 +1121,304 @@ header::after {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+}
+
+/* Offline Panel Sizing */
+.offline-card {
+    width: 100%;
+    max-width: 500px;
+    padding: 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Lobby View Sizing */
+.lobby-radar-card {
+    width: 100%;
+    max-width: 450px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+}
+
+.lobby-cache-card {
+    width: 100%;
+    max-width: 450px;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Radar Standby Animation Details */
+.radar-ping-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+.radar-ping-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-cyan);
+    box-shadow: 0 0 10px var(--color-cyan);
+}
+
+.radar-ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid var(--color-cyan);
+    animation: radar-expand 2s infinite linear;
+}
+
+.radar-ring:nth-child(2) {
+    animation-delay: 1s;
+}
+
+/* HUD Panels & Columns Layout */
+.hud-col-left {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    justify-content: space-between;
+    height: 100%;
+    width: 420px;
+}
+
+.hud-panel-left {
+    width: 100%;
+    background: rgba(11, 18, 25, 0.85);
+    border: 1px solid var(--border-cyber);
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.hud-panel-coach {
+    width: 100%;
+    background: rgba(0, 240, 255, 0.05);
+    border: 1px solid var(--color-cyan);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+}
+
+.hud-panel-coach-icon {
+    width: 60px;
+    background: var(--color-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px var(--glow-cyan);
+}
+
+.hud-panel-coach-content {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.hud-col-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    height: 100%;
+    width: 320px;
+}
+
+.hud-panel-right {
+    width: 100%;
+    background: rgba(11, 18, 25, 0.85);
+    border: 1px solid var(--border-cyber);
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Media Queries for Responsiveness */
+
+/* Breakpoint 1: Laptop/Medium screens (up to 1250px) */
+@media (max-width: 1250px) {
+    header {
+        padding: 15px 20px;
+    }
+    .state-view {
+        padding: 20px;
+    }
+}
+
+/* Breakpoint 2: Tablet/Laptops (up to 1150px) */
+@media (max-width: 1150px) {
+    #viewPregame.active {
+        grid-template-columns: 1fr 1.2fr;
+        grid-template-rows: auto auto;
+        grid-template-areas:
+            "dash dash"
+            "team select";
+        overflow-y: auto;
+    }
+    
+    .pregame-select-panel {
+        height: auto;
+    }
+}
+
+/* Breakpoint 3: Tablet/Mobile Landscape (up to 900px) */
+@media (max-width: 900px) {
+    body {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+    }
+    
+    .state-view {
+        height: auto;
+        overflow-y: visible;
+        min-height: calc(100vh - 75px);
+    }
+    
+    header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+        padding: 15px;
+    }
+    
+    .status-container {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #viewMenu.active {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: auto;
+    }
+    
+    .lobby-radar-card, .lobby-cache-card {
+        max-width: 100%;
+    }
+    
+    #viewIngame.active {
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 20px;
+        overflow-y: auto;
+        background-attachment: scroll;
+        padding: 20px;
+    }
+    
+    .hud-col-left, .hud-col-right {
+        width: 100%;
+        height: auto;
+        align-items: stretch;
+    }
+    
+    .hud-col-right {
+        justify-content: flex-start;
+    }
+}
+
+/* Breakpoint 4: Mobile Portrait (up to 768px) */
+@media (max-width: 768px) {
+    #viewPregame.active {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        grid-template-areas:
+            "dash"
+            "select"
+            "team";
+    }
+    
+    .pregame-team-panel {
+        max-height: 500px;
+    }
+    
+    .picks-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .tabs-header {
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+    }
+    
+    .tabs-header::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tab-btn {
+        flex: 0 0 auto;
+        padding: 10px 15px;
+    }
+}
+
+/* Breakpoint 5: Tiny Mobile (up to 480px) */
+@media (max-width: 480px) {
+    .selection-panel {
+        flex-direction: column;
+        height: auto;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .selection-portrait-wrap {
+        width: 100%;
+        max-width: 150px;
+        height: 180px;
+    }
+    
+    .agents-grid-container {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .floating-buy-overlay {
+        width: calc(100% - 30px);
+        left: 15px;
+        right: 15px;
+        bottom: 15px;
+    }
+
+    .selection-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .timer-wrap {
+        align-items: center;
+    }
 }

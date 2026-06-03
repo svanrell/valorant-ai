@@ -1019,8 +1019,13 @@ function startIngameDemo() {
     switchView('ingame');
     
     selectedMap = mapSelect.value || 'Ascent';
-    document.getElementById('ingameMap').innerText = selectedMap;
-    document.getElementById('ingameMode').innerText = 'COMPETITIVE';
+    
+    const ingameMapEl = document.getElementById('ingameMap');
+    if (ingameMapEl) ingameMapEl.innerText = selectedMap;
+    
+    const ingameModeEl = document.getElementById('ingameMode');
+    if (ingameModeEl) ingameModeEl.innerText = 'COMPETITIVE';
+    
     document.getElementById('ingameRoundHeader').innerText = 'MATCH START | ROUND 1';
     
     const splash = MAP_SPLASHES[selectedMap] || MAP_SPLASHES['Ascent'];
@@ -1029,7 +1034,10 @@ function startIngameDemo() {
     // Trigger simulated recommendations
     document.getElementById('ingameRecWeapon').innerText = 'PHANTOM';
     document.getElementById('ingameRecAgent').innerText = 'JETT';
-    document.getElementById('ingameRecCreds').innerText = '3200';
+    
+    const creditsInput = document.getElementById('ingameCreditsInput');
+    if (creditsInput) creditsInput.value = '3200';
+    
     document.getElementById('ingameRecSide').innerText = 'ATTACKER';
     
     document.getElementById('ingameBuyWeaponName').innerText = 'PHANTOM';
