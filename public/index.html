@@ -185,12 +185,22 @@
             </div>
 
             <!-- Map Picks Card -->
-            <div class="cyber-panel map-picks-panel">
+            <div class="cyber-panel map-picks-panel" style="display: flex; flex-direction: column; min-height: 250px;">
                 <div class="panel-header">
-                    <span>AI Character Recommendation Picks</span>
+                    <span>AI Map Intelligence</span>
                 </div>
-                <div id="recommendedPicks" class="picks-list">
-                    <!-- Javascript will inject recommended cards here -->
+                <div class="map-intel-container" style="display: flex; flex: 1; overflow: hidden; height: calc(100% - 37px);">
+                    <!-- Left: Recommendations -->
+                    <div style="flex: 1.2; border-right: 1px solid var(--border-cyber); display: flex; flex-direction: column; padding: 12px; height: 100%;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Recommended Picks</div>
+                        <div id="recommendedPicks" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding-right: 4px;">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                    <!-- Right: Map Tactical Stats -->
+                    <div id="mapTacticalStats" style="flex: 1; display: flex; flex-direction: column; padding: 12px; justify-content: space-between; height: 100%;">
+                        <!-- Injected by JS based on map -->
+                    </div>
                 </div>
             </div>
         </div>

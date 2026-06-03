@@ -441,33 +441,175 @@ function clearSlot(index) {
 }
 
 // Render AI Recommended Agent Cards
+const MAP_TACTICAL_STATS = {
+    'Ascent': {
+        atkWin: '48.6%',
+        defWin: '51.4%',
+        atkPercent: 48.6,
+        defPercent: 51.4,
+        metaClass: 'Initiator & Sentinel',
+        complexity: 'Medium',
+        avgDuration: '54.2s',
+        defaultSite: 'A Site (53%)',
+        plantSpot: 'Default Generator',
+        metaComp: 'Jett, Omen, Sova, KO, KJ',
+        proTip: 'Mid control is crucial. Smoke Market and Arch to split defense. Sova arrows reveal A site easily.'
+    },
+    'Bind': {
+        atkWin: '50.2%',
+        defWin: '49.8%',
+        atkPercent: 50.2,
+        defPercent: 49.8,
+        metaClass: 'Controller & Duelist',
+        complexity: 'Medium',
+        avgDuration: '52.8s',
+        defaultSite: 'B Site (51%)',
+        plantSpot: 'Default Truck/Cubby',
+        metaComp: 'Raze, Brim, Viper, Skye, Fade',
+        proTip: 'Teleporters enable rapid rotations. Use Viper walls to segment site lines.'
+    },
+    'Haven': {
+        atkWin: '49.5%',
+        defWin: '50.5%',
+        atkPercent: 49.5,
+        defPercent: 50.5,
+        metaClass: 'Initiator & Sentinel',
+        complexity: 'High',
+        avgDuration: '56.1s',
+        defaultSite: 'C Site (42%)',
+        plantSpot: 'Default Box C/Back A',
+        metaComp: 'Jett, Omen, Sova, Breach, KJ',
+        proTip: '3-site map. Sentinel setups at B or C allow active rotation to support A.'
+    },
+    'Split': {
+        atkWin: '47.8%',
+        defWin: '52.2%',
+        atkPercent: 47.8,
+        defPercent: 52.2,
+        metaClass: 'Duelist & Controller',
+        complexity: 'High',
+        avgDuration: '53.5s',
+        defaultSite: 'A Site (55%)',
+        plantSpot: 'Screen box A / Mid B',
+        metaComp: 'Raze, Omen, Cypher, Breach, Skye',
+        proTip: 'Mid/Vents control dictates the round. Fight for Ramps and Heaven control.'
+    },
+    'Breeze': {
+        atkWin: '51.1%',
+        defWin: '48.9%',
+        atkPercent: 51.1,
+        defPercent: 48.9,
+        metaClass: 'Duelist & Controller',
+        complexity: 'Low',
+        avgDuration: '55.4s',
+        defaultSite: 'A Site (58%)',
+        plantSpot: 'Pyramids default',
+        metaComp: 'Jett, Viper, Sova, Cypher, KAY/O',
+        proTip: 'Open sites favor long-range rifles and Operator. Viper is mandatory for cover.'
+    },
+    'Icebox': {
+        atkWin: '50.8%',
+        defWin: '49.2%',
+        atkPercent: 50.8,
+        defPercent: 49.2,
+        metaClass: 'Sentinel & Controller',
+        complexity: 'Medium',
+        avgDuration: '53.9s',
+        defaultSite: 'A Site (56%)',
+        plantSpot: 'Default A Nest/Box',
+        metaComp: 'Jett, Viper, Sage, Killjoy, Sova',
+        proTip: 'Verticality is high. Hold Tube on mid. Viper wall screen on A is essential.'
+    },
+    'Sunset': {
+        atkWin: '49.1%',
+        defWin: '50.9%',
+        atkPercent: 49.1,
+        defPercent: 50.9,
+        metaClass: 'Sentinel & Controller',
+        complexity: 'Medium',
+        avgDuration: '52.1s',
+        defaultSite: 'B Site (54%)',
+        plantSpot: 'Default B Pillars',
+        metaComp: 'Raze, Omen, Cypher, Gekko, Fade',
+        proTip: 'Mid control gives full map splits. Trap Cypher trips on B main before executing.'
+    },
+    'Lotus': {
+        atkWin: '51.5%',
+        defWin: '48.5%',
+        atkPercent: 51.5,
+        defPercent: 48.5,
+        metaClass: 'Duelist & Initiator',
+        complexity: 'High',
+        avgDuration: '54.8s',
+        defaultSite: 'C Site (45%)',
+        plantSpot: 'Default A box/C mound',
+        metaComp: 'Raze, Omen, Killjoy, Fade, Breach',
+        proTip: '3-site map with rotating doors. Breach stun/flash is highly effective here.'
+    }
+};
+
 function renderRecommended() {
     recommendedPicks.innerHTML = '';
     const picks = MAP_RECOMMENDATIONS[selectedMap] || [];
 
     picks.forEach((pick, index) => {
         const card = document.createElement('div');
-        card.className = 'pick-card';
         
         let avatarUrl = '';
-        if (agentsCache[pick.uuid]) {
-            avatarUrl = agentsCache[pick.uuid].icon;
+        const pickUuidLower = pick.uuid ? pick.uuid.toLowerCase() : '';
+        if (pickUuidLower && agentsCache[pickUuidLower]) {
+            avatarUrl = agentsCache[pickUuidLower].icon;
+        } else {
+            // Fallback: search in agentsCache by displayName
+            const pickNameLower = pick.name.toLowerCase();
+            const foundAgentKey = Object.keys(agentsCache).find(key => agentsCache[key].name.toLowerCase() === pickNameLower);
+            if (foundAgentKey) {
+                avatarUrl = agentsCache[foundAgentKey].icon;
+                pick.uuid = foundAgentKey; // Correct the UUID in-place so click selection works
+            }
         }
 
+        // Compact styling
+        card.className = 'pick-compact-card';
+        card.style.display = 'flex';
+        card.style.alignItems = 'center';
+        card.style.background = 'rgba(15, 26, 36, 0.4)';
+        card.style.border = '1px solid var(--border-cyber)';
+        card.style.borderRadius = '4px';
+        card.style.padding = '8px 12px';
+        card.style.gap = '12px';
+        card.style.cursor = 'pointer';
+        card.style.position = 'relative';
+        card.style.transition = 'all 0.2s';
+        
         card.innerHTML = `
-            <div class="pick-rank-badge">${index + 1}</div>
-            <img src="${avatarUrl}" class="pick-avatar" alt="${pick.name}">
-            <div class="pick-name">${pick.name}</div>
-            <div class="pick-role">${pick.role}</div>
-            <div class="pick-stat-label">Win Rate</div>
-            <div class="pick-winrate">${pick.winrate}</div>
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900; color: var(--color-cyan); width: 15px;">#${index + 1}</div>
+            <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-cyber); object-fit: cover;" alt="${pick.name}">
+            <div style="flex: 1;">
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); text-transform: uppercase;">${pick.name}</div>
+                <div style="font-size: 9px; color: var(--text-muted);">${pick.role}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Win Rate</div>
+                <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--color-green); text-shadow: 0 0 4px var(--glow-green);">${pick.winrate}</div>
+            </div>
         `;
 
+        // Hover effect helper in JS
+        card.onmouseenter = () => {
+            card.style.borderColor = 'var(--color-cyan)';
+            card.style.background = 'rgba(0, 240, 255, 0.05)';
+            card.style.transform = 'translateY(-1px)';
+        };
+        card.onmouseleave = () => {
+            card.style.borderColor = 'var(--border-cyber)';
+            card.style.background = 'rgba(15, 26, 36, 0.4)';
+            card.style.transform = 'translateY(0)';
+        };
+
         // Clicking a recommended card automatically selects it in both simulator and live modes
-        card.style.cursor = 'pointer';
         card.onclick = () => {
             if (agentsCache[pick.uuid]) {
-                // Find the raw agent object
                 const rawAgent = agentsList.find(a => a.uuid === pick.uuid);
                 if (rawAgent) {
                     selectAgent(rawAgent);
@@ -477,6 +619,72 @@ function renderRecommended() {
 
         recommendedPicks.appendChild(card);
     });
+
+    // Render Map Tactical Stats on the right
+    const stats = MAP_TACTICAL_STATS[selectedMap] || {
+        atkWin: '50.0%',
+        defWin: '50.0%',
+        atkPercent: 50,
+        defPercent: 50,
+        metaClass: 'Balanced composition',
+        complexity: 'Medium',
+        avgDuration: '54.0s',
+        defaultSite: 'A Site',
+        plantSpot: 'Default Plant',
+        metaComp: 'Standard Pick',
+        proTip: 'Maintain group coordination and utility trades.'
+    };
+
+    const statsPanel = document.getElementById('mapTacticalStats');
+    if (statsPanel) {
+        statsPanel.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 8px; height: 100%; justify-content: space-between;">
+                <!-- Section 1: Header & Difficulty -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(21, 34, 50, 0.5); padding-bottom: 5px;">
+                    <div style="font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">Map Tactical Intel</div>
+                    <span style="font-size: 8px; font-family: 'Orbitron', sans-serif; font-weight: 700; color: var(--color-cyan); border: 1px solid var(--color-cyan); padding: 1px 6px; border-radius: 10px; background: rgba(0, 240, 255, 0.05);">DIFFICULTY: ${stats.complexity.toUpperCase()}</span>
+                </div>
+
+                <!-- Section 2: ATK vs DEF Winrate Visual Bar -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-muted); margin-bottom: 3px; font-family: 'Orbitron', sans-serif;">
+                        <span>ATK (${stats.atkWin})</span>
+                        <span>DEF (${stats.defWin})</span>
+                    </div>
+                    <div style="height: 6px; background: rgba(255, 70, 85, 0.2); border-radius: 3px; overflow: hidden; display: flex;">
+                        <div style="width: ${stats.atkPercent}%; background: var(--color-red); box-shadow: 0 0 6px var(--glow-red);"></div>
+                        <div style="width: ${stats.defPercent}%; background: var(--color-cyan); box-shadow: 0 0 6px var(--glow-cyan);"></div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Micro Grid Metrics -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-cyber); padding: 5px 8px; border-radius: 4px;">
+                        <div style="font-size: 7px; color: var(--text-muted); text-transform: uppercase;">Avg Round Time</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; color: var(--text-main); margin-top: 1px;">${stats.avgDuration}</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-cyber); padding: 5px 8px; border-radius: 4px;">
+                        <div style="font-size: 7px; color: var(--text-muted); text-transform: uppercase;">Hot Plant Spot</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; color: var(--color-green); margin-top: 1px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${stats.plantSpot}">${stats.plantSpot}</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-cyber); padding: 5px 8px; border-radius: 4px;">
+                        <div style="font-size: 7px; color: var(--text-muted); text-transform: uppercase;">Preferred Exec</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 700; color: var(--text-main); margin-top: 1px; text-transform: uppercase;">${stats.defaultSite}</div>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-cyber); padding: 5px 8px; border-radius: 4px;">
+                        <div style="font-size: 7px; color: var(--text-muted); text-transform: uppercase;">Meta Composition</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 8px; font-weight: 700; color: var(--color-yellow); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${stats.metaComp}">${stats.metaComp}</div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Focus & Pro Tip -->
+                <div style="background: rgba(0, 240, 255, 0.01); border: 1px dashed rgba(0, 240, 255, 0.15); padding: 8px; border-radius: 4px; margin-top: 2px;">
+                    <div style="font-size: 8px; color: var(--color-cyan); font-weight: bold; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px;">Meta: ${stats.metaClass.toUpperCase()}</div>
+                    <p style="font-size: 9px; line-height: 1.35; color: var(--text-main); margin: 0; font-weight: 400;">${stats.proTip}</p>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Main algorithm to calculate Team Synergy, Strengths, Weaknesses, and Alerts
