@@ -132,7 +132,7 @@ async function initData() {
                     icon: agent.displayIcon,
                     bust: agent.bustPortrait,
                     full: agent.fullPortrait,
-                    role: agent.role ? agent.role.displayName : '',
+                    role: agent.role.displayName,
                     description: agent.description,
                     abilities: agent.abilities
                 };
@@ -177,7 +177,7 @@ function switchView(viewName) {
 // Initialize grid list of agents
 function renderAgentsGrid() {
     agentsGrid.innerHTML = '';
-    
+
     // Filter agents
     const filtered = agentsList.filter(agent => {
         if (activeTab === 'all') return true;
@@ -186,12 +186,12 @@ function renderAgentsGrid() {
     });
 
     // Sort alphabetically
-    filtered.sort((a,b) => a.displayName.localeCompare(b.displayName));
+    filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     filtered.forEach(agent => {
         const item = document.createElement('div');
         item.className = 'agent-grid-item';
-        
+
         const agentUuidLower = agent.uuid.toLowerCase();
         if (activeSelectedAgent && activeSelectedAgent.uuid === agent.uuid) {
             item.classList.add('selected');
@@ -202,9 +202,9 @@ function renderAgentsGrid() {
         if (isTaken) {
             item.classList.add('picked');
         }
-        
+
         item.innerHTML = `<img src="${agent.displayIcon}" alt="${agent.displayName}" title="${agent.displayName}">`;
-        
+
         if (isTaken) {
             const overlay = document.createElement('div');
             overlay.className = 'locked-overlay';
@@ -235,13 +235,13 @@ function filterRole(roleName) {
 function selectAgent(agent) {
     // Check if already locked by another player
     const isTaken = myTeam.some((player, idx) => idx !== currentDraftSlot && player.agentId === agent.uuid.toLowerCase());
-    
+
     activeSelectedAgent = agent;
-    
+
     // Render selected state in grid
     const items = document.querySelectorAll('.agent-grid-item');
     items.forEach(el => el.classList.remove('selected'));
-    
+
     // Find active element in grid to add border glow
     const targetImg = Array.from(agentsGrid.querySelectorAll('img')).find(img => img.src === agent.displayIcon);
     if (targetImg && targetImg.parentElement) {
@@ -357,7 +357,7 @@ function renderTeam() {
 
         const agentIdLower = player.agentId ? player.agentId.toLowerCase() : '';
         const agentData = agentsCache[agentIdLower];
-        
+
         let avatarContent = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <circle cx="12" cy="7" r="4"></circle>
@@ -554,7 +554,7 @@ function renderRecommended() {
 
     picks.forEach((pick, index) => {
         const card = document.createElement('div');
-        
+
         let avatarUrl = '';
         const pickUuidLower = pick.uuid ? pick.uuid.toLowerCase() : '';
         if (pickUuidLower && agentsCache[pickUuidLower]) {
@@ -581,7 +581,7 @@ function renderRecommended() {
         card.style.cursor = 'pointer';
         card.style.position = 'relative';
         card.style.transition = 'all 0.2s';
-        
+
         card.innerHTML = `
             <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900; color: var(--color-cyan); width: 15px;">#${index + 1}</div>
             <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-cyber); object-fit: cover;" alt="${pick.name}">
@@ -691,7 +691,7 @@ function renderRecommended() {
 // Main algorithm to calculate Team Synergy, Strengths, Weaknesses, and Alerts
 function updateSynergy() {
     let synergy = 50; // Base baseline
-    
+
     // Track composition classes
     let counts = {
         'Duelist': 0,
@@ -699,7 +699,7 @@ function updateSynergy() {
         'Controller': 0, // Smokes
         'Sentinel': 0
     };
-    
+
     let healers = 0; // Sage / Skye
     let totalAgentsPicked = 0;
     let alignedPicks = 0; // recommendations alignment
@@ -745,7 +745,7 @@ function updateSynergy() {
     if (counts['Duelist'] > 0 && counts['Initiator'] > 0) {
         synergy += 10;
     }
-    
+
     // 4. Sentinel (lockdown) (+10%)
     if (counts['Sentinel'] > 0) {
         synergy += 10;
@@ -822,7 +822,7 @@ function setSynergyMeter(val, rating, strengths, weaknesses) {
 // Render critical warnings based on missing utilities
 function renderAlerts(counts, healers, totalAgents) {
     alertsContainer.innerHTML = '';
-    
+
     if (totalAgents === 0) {
         alertsContainer.innerHTML = `
             <div class="alert-banner" style="background: rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.2);">
@@ -895,7 +895,7 @@ function renderAlerts(counts, healers, totalAgents) {
 function createAlertElement(title, desc, priority) {
     const el = document.createElement('div');
     el.className = 'alert-banner';
-    
+
     if (priority === 'high') {
         el.style.borderColor = 'rgba(255, 70, 85, 0.4)';
         el.style.background = 'rgba(255, 70, 85, 0.08)';
@@ -963,7 +963,7 @@ function showBuyOverlay(round, duration, recommendation) {
     buyOverlay.classList.remove('hidden');
     buyOverlayRound.innerText = `ROUND ${round} - BUY PHASE`;
     buyOverlayText.innerHTML = `<strong>AI BUY STRATEGY:</strong> ${recommendation}`;
-    
+
     buyOverlayMaxTime = duration;
     updateBuyOverlayProgress(duration);
 
@@ -995,7 +995,7 @@ function startSimulator() {
     isLiveMode = false;
     setConnectionState('offline', 'Radar Offline (Sim)');
     switchView('pregame');
-    
+
     // Re-render empty team compostion
     myTeam = [
         { puuid: 'p1', name: 'Ally 1 (You)', agentId: null, state: '', level: 125, rank: 21, playerCardId: '' },
@@ -1004,7 +1004,7 @@ function startSimulator() {
         { puuid: 'p4', name: 'Ally 4', agentId: null, state: '', level: 41, rank: 17, playerCardId: '' },
         { puuid: 'p5', name: 'Ally 5', agentId: null, state: '', level: 195, rank: 22, playerCardId: '' }
     ];
-    
+
     currentDraftSlot = 0;
     renderTeam();
     renderAgentsGrid();
@@ -1017,29 +1017,29 @@ function startIngameDemo() {
     isLiveMode = false;
     setConnectionState('offline', 'Radar Offline (Sim)');
     switchView('ingame');
-    
+
     selectedMap = mapSelect.value || 'Ascent';
-    
+
     const ingameMapEl = document.getElementById('ingameMap');
     if (ingameMapEl) ingameMapEl.innerText = selectedMap;
-    
+
     const ingameModeEl = document.getElementById('ingameMode');
     if (ingameModeEl) ingameModeEl.innerText = 'COMPETITIVE';
-    
+
     document.getElementById('ingameRoundHeader').innerText = 'MATCH START | ROUND 1';
-    
+
     const splash = MAP_SPLASHES[selectedMap] || MAP_SPLASHES['Ascent'];
     document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.45), rgba(5, 8, 12, 0.55)), url('${splash}')`;
-    
+
     // Trigger simulated recommendations
     document.getElementById('ingameRecWeapon').innerText = 'PHANTOM';
     document.getElementById('ingameRecAgent').innerText = 'JETT';
-    
+
     const creditsInput = document.getElementById('ingameCreditsInput');
     if (creditsInput) creditsInput.value = '3200';
-    
+
     document.getElementById('ingameRecSide').innerText = 'ATTACKER';
-    
+
     document.getElementById('ingameBuyWeaponName').innerText = 'PHANTOM';
     document.getElementById('ingameBuyWeaponCost').innerText = '(2900)';
     document.getElementById('ingameBuyShieldName').innerText = 'LIGHT SHIELD';
@@ -1047,11 +1047,11 @@ function startIngameDemo() {
     document.getElementById('ingameBuyAbilitiesName').innerText = 'DASH / SMOKE';
     document.getElementById('ingameBuyAbilitiesCost').innerText = '(0)';
     document.getElementById('ingameBuyTotalCost').innerText = '3300';
-    
+
     document.getElementById('ingameCoachText').innerText = "PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.";
     document.getElementById('ingameBuyTimerDigits').innerText = `00:30`;
     document.getElementById('ingameBuyTimerBar').style.width = '100%';
-    
+
     // ult track images
     document.getElementById('ultAgentHead1').src = 'https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png';
     document.getElementById('ultAgentHead2').src = 'https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png';
@@ -1079,7 +1079,7 @@ function setConnectionState(state, text) {
     connectionStatus.className = `status-badge status-${state}`;
     connectionText.innerText = text;
     isLiveMode = (state === 'live');
-    
+
     if (isLiveMode) {
         mapSelect.disabled = true; // live client locks map selection
     } else {
@@ -1090,31 +1090,31 @@ function setConnectionState(state, text) {
 // Listen for live Valorant Game Radar status changes
 socket.on('valorant_status', (data) => {
     console.log("Websocket valorant_status event:", data);
-    
+
     if (data.status === 'CLOSED') {
         setConnectionState('offline', 'Game Offline');
         switchView('closed');
-    } 
+    }
     else if (data.status === 'MENU') {
         setConnectionState('menu-mode', 'In Game Lobby');
         switchView('menu');
-    } 
+    }
     else if (data.status === 'PREGAME') {
         setConnectionState('live', 'Agent Selection');
         switchView('pregame');
-        
+
         livePregameMatchId = data.pregameMatchId;
 
         // Set map from server pregame matches
         if (data.mapName) {
             selectedMap = data.mapName;
             mapSelect.value = selectedMap;
-            
+
             // Override with live ML recommendations from server if available
             if (data.mlDraftPicks && data.mlDraftPicks.length > 0) {
                 MAP_RECOMMENDATIONS[selectedMap] = data.mlDraftPicks;
             }
-            
+
             renderRecommended();
         }
 
@@ -1139,21 +1139,21 @@ socket.on('valorant_status', (data) => {
     else if (data.status === 'INGAME') {
         setConnectionState('live', 'In Game Match');
         switchView('ingame');
-        
+
         livePregameMatchId = null;
 
         if (data.mapName) {
             selectedMap = data.mapName;
             mapSelect.value = selectedMap;
             document.getElementById('ingameMap').innerText = selectedMap;
-            
+
             const splash = MAP_SPLASHES[selectedMap] || MAP_SPLASHES['Ascent'];
             document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.55), rgba(5, 8, 12, 0.65)), url('${splash}')`;
         }
         if (data.mode) {
             document.getElementById('ingameMode').innerText = data.mode;
         }
-        
+
         // Map live player list
         if (data.players && data.players.length > 0) {
             myTeam = data.players.map((p, index) => ({
@@ -1177,7 +1177,7 @@ socket.on('valorant_status', (data) => {
             'https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png', // Omen fallback
             'https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png'  // Killjoy fallback
         ];
-        
+
         let loadedIndex = 0;
         myTeam.forEach((player, idx) => {
             if (idx > 0 && player.agentId && agentsCache[player.agentId] && loadedIndex < 4) {
@@ -1258,7 +1258,7 @@ function updateBuyRecommendations(credits, round) {
     }
 
     const totalCost = wCost + sCost + aCost;
-    
+
     // Update elements
     document.getElementById('ingameBuyWeaponName').innerText = wName;
     document.getElementById('ingameBuyWeaponCost').innerText = `(${wCost})`;
@@ -1273,19 +1273,19 @@ function updateBuyRecommendations(credits, round) {
 // Listen for live Buy Phase updates
 socket.on('buy_phase', (data) => {
     console.log("WebSocket buy_phase event:", data);
-    
+
     currentIngameRound = data.round;
     const creditsInput = document.getElementById('ingameCreditsInput');
     const credits = parseInt(creditsInput.value) || 0;
 
     // Estimate side based on round
     const side = data.round <= 12 ? 'ATTACKER' : 'DEFENDER';
-    
+
     // Dynamic coach tips by map and round
     let coachTip = "PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.";
     if (selectedMap === 'Ascent') {
-        coachTip = side === 'ATTACKER' 
-            ? "Push B Main together. Omen smoke Market & CT. Sova scan back site." 
+        coachTip = side === 'ATTACKER'
+            ? "Push B Main together. Omen smoke Market & CT. Sova scan back site."
             : "Hold A Main with Omen smoke. Killjoy setup B site defense. Watch Mid link.";
     } else if (selectedMap === 'Bind') {
         coachTip = side === 'ATTACKER'
@@ -1299,10 +1299,10 @@ socket.on('buy_phase', (data) => {
         // Update floating overlay
         const recText = getBuyRecommendationText(credits, data.round);
         showBuyOverlay(data.round, data.time, recText);
-        
+
         // Update in-game HUD widgets
         document.getElementById('ingameRoundHeader').innerText = `Round ${data.round} - BUY PHASE`;
-        
+
         // Set agent name based on first player
         let myAgent = 'JETT';
         if (myTeam[0] && myTeam[0].agentId && agentsCache[myTeam[0].agentId]) {
@@ -1311,10 +1311,10 @@ socket.on('buy_phase', (data) => {
         document.getElementById('ingameRecAgent').innerText = myAgent;
         document.getElementById('ingameRecSide').innerText = side;
         document.getElementById('ingameRecSide').style.color = side === 'ATTACKER' ? 'var(--color-red)' : 'var(--color-cyan)';
-        
+
         // Coach tip
         document.getElementById('ingameCoachText').innerText = coachTip;
-        
+
         // Timer
         const minutes = Math.floor(data.time / 60);
         const seconds = data.time % 60;
@@ -1369,45 +1369,45 @@ function getWeaponCost(name) {
 
 function renderMlBuyRecommendations(data) {
     if (!data || !data.buy_recommendations || data.buy_recommendations.length === 0) return;
-    
+
     const rec = data.buy_recommendations[0]; // Top recommendation
-    
+
     // Update weapon
     document.getElementById('ingameRecWeapon').innerText = rec.weapon.toUpperCase();
-    
+
     // Update side based on round
     const side = currentIngameRound <= 12 ? 'ATTACKER' : 'DEFENDER';
     document.getElementById('ingameRecSide').innerText = side;
     document.getElementById('ingameRecSide').style.color = side === 'ATTACKER' ? 'var(--color-red)' : 'var(--color-cyan)';
-    
+
     // Update items details
     document.getElementById('ingameBuyWeaponName').innerText = rec.weapon.toUpperCase();
     const weaponCost = getWeaponCost(rec.weapon);
     document.getElementById('ingameBuyWeaponCost').innerText = `(${weaponCost})`;
-    
+
     const shieldName = rec.shield === 'Heavy' ? 'HEAVY SHIELD' : (rec.shield === 'Light' ? 'LIGHT SHIELD' : 'NO SHIELD');
     const shieldCost = rec.shield === 'Heavy' ? 1000 : (rec.shield === 'Light' ? 400 : 0);
     document.getElementById('ingameBuyShieldName').innerText = shieldName;
     document.getElementById('ingameBuyShieldCost').innerText = `(${shieldCost})`;
-    
+
     const abilitiesName = rec.abilities ? 'FULL BUY' : 'SAVE';
     const abilitiesCost = rec.abilities ? 400 : 0;
     document.getElementById('ingameBuyAbilitiesName').innerText = abilitiesName;
     document.getElementById('ingameBuyAbilitiesCost').innerText = `(${abilitiesCost})`;
-    
+
     document.getElementById('ingameBuyTotalCost').innerText = rec.cost.toString();
-    
+
     // Coach tip based on tactic
     let coachTip = `AI SUGGESTED TACTIC: ${rec.tactic.toUpperCase()} | SITE: ${rec.site} | MAIN DEFENDER: ${rec.defensor.toUpperCase()}`;
     document.getElementById('ingameCoachText').innerText = coachTip;
-    
+
     // Update enemy economy prediction
     if (data.enemy_economy) {
         const eco = data.enemy_economy;
         document.getElementById('ingameEnemyEcoEstimateRound').innerText = `ROUND ${currentIngameRound} ESTIMATE`;
         document.getElementById('ingameEnemyEcoCreds').innerText = `AVG CREDS: ${eco.avg_credits}`;
         document.getElementById('ingameEnemyEcoLoadout').innerText = `${eco.weapon.toUpperCase()} / ${eco.shield === 'Heavy' ? 'HEAVY' : (eco.shield === 'Light' ? 'LIGHT' : 'NO')} SHIELD`;
-        
+
         let ecoDesc = 'Full buy with heavy weapon setup';
         if (eco.type === 'Eco') {
             ecoDesc = 'Light saving buy, low utilities';
@@ -1416,7 +1416,7 @@ function renderMlBuyRecommendations(data) {
         }
         document.getElementById('ingameEnemyEcoDesc').innerText = ecoDesc;
         document.getElementById('ingameEnemyEcoRating').innerText = `${eco.type.toUpperCase()} (${eco.type === 'Full-Buy' ? 'DANGEROUS' : 'ECO/SAVE'})`;
-        
+
         // Color rating
         if (eco.type === 'Full-Buy') {
             document.getElementById('ingameEnemyEcoRating').style.color = 'var(--color-red)';
