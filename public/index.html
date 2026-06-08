@@ -48,9 +48,22 @@
                 </select>
             </div>
 
+            <div class="mode-selector-wrap">
+                <div class="mode-selector-label">Game Mode:</div>
+                <select id="modeSelect" class="mode-select">
+                    <option value="competitive">Competitive</option>
+                    <option value="unrated">Unrated</option>
+                    <option value="swiftplay">Swiftplay</option>
+                    <option value="spikerush">Spike Rush</option>
+                    <option value="deathmatch">Deathmatch</option>
+                    <option value="escalation">Escalation</option>
+                    <option value="custom">Custom Game</option>
+                </select>
+            </div>
+
             <div id="connectionStatus" class="status-badge status-offline">
                 <span class="status-dot"></span>
-                <span id="connectionText">Radar Offline</span>
+                <span id="connectionText">Valorant Game is Offline</span>
             </div>
         </div>
     </header>
@@ -173,6 +186,42 @@
             </div>
             <div id="teamList" class="team-list">
                 <!-- Javascript will inject 5 slots here -->
+            </div>
+
+            <!-- Game Mode Specifications Info Panel -->
+            <div id="sandboxControlsCard" class="sandbox-controls-card">
+                <div class="sandbox-header">
+                    <span>Mode Specifications</span>
+                    <span class="sandbox-badge" id="modeRulesName">Competitive</span>
+                </div>
+
+                <div class="sandbox-fields">
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-muted);">Team Capacity:</span>
+                            <span id="modeRulesSize"
+                                style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">5
+                                Players</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-muted);">Economy Rules:</span>
+                            <span id="modeRulesBuy" class="rules-badge-buy enabled">Buy Allowed</span>
+                        </div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                            <span style="color: var(--text-muted);">Side Swap rule:</span>
+                            <span id="modeRulesRounds"
+                                style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">Swap
+                                at Round 13</span>
+                        </div>
+                    </div>
+
+                    <div id="modeRulesDesc" class="sim-info-box">
+                        Mode rules: 5v5 competitive draft, standard credits buy, halves swap at round 12.
+                    </div>
+                </div>
             </div>
         </div>
 

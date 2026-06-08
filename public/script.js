@@ -3,18 +3,22 @@ const MAP_RECOMMENDATIONS = {
     'Ascent': [
         { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '72.4%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
         { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '69.1%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
+        { id: 'jett', name: 'Jett', role: 'Duelist', winrate: '68.3%', uuid: 'ad8b151e-408d-f227-5185-5b7461c47a45' },
         { id: 'skye', name: 'Skye', role: 'Initiator', winrate: '65.5%', uuid: '6f2a04ca-43e0-be17-7f36-b3908627744d' },
+        { id: 'omen', name: 'Omen', role: 'Controller', winrate: '63.9%', uuid: '8e253930-4c05-31dd-1b6c-968525494517' },
         { id: 'kay/o', name: 'KAY/O', role: 'Initiator', winrate: '61.8%', uuid: 'a3db83f8-4a55-398d-aa10-09a547d8cda5' }
     ],
     'Bind': [
         { id: 'raze', name: 'Raze', role: 'Duelist', winrate: '70.2%', uuid: 'f94c7e43-f19d-405d-ac15-17e21df5c7a4' },
         { id: 'brimstone', name: 'Brimstone', role: 'Controller', winrate: '68.5%', uuid: '9f0ac6b1-410a-99d4-d998-7e1458576b53' },
+        { id: 'cypher', name: 'Cypher', role: 'Sentinel', winrate: '67.4%', uuid: '117ed9e3-49f3-6512-3ccf-00ad780d1b14' },
         { id: 'viper', name: 'Viper', role: 'Controller', winrate: '66.8%', uuid: '707e217c-438f-a5bb-2150-7d066a3416e7' },
         { id: 'skye', name: 'Skye', role: 'Initiator', winrate: '64.2%', uuid: '6f2a04ca-43e0-be17-7f36-b3908627744d' }
     ],
     'Haven': [
         { id: 'jett', name: 'Jett', role: 'Duelist', winrate: '71.5%', uuid: 'ad8b151e-408d-f227-5185-5b7461c47a45' },
         { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '69.2%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
+        { id: 'omen', name: 'Omen', role: 'Controller', winrate: '68.1%', uuid: '8e253930-4c05-31dd-1b6c-968525494517' },
         { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '67.4%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
         { id: 'breach', name: 'Breach', role: 'Initiator', winrate: '65.1%', uuid: '5f8d3a7f-467b-97f3-062c-13acf203c00a' }
     ],
@@ -32,6 +36,7 @@ const MAP_RECOMMENDATIONS = {
     ],
     'Icebox': [
         { id: 'viper', name: 'Viper', role: 'Controller', winrate: '72.8%', uuid: '707e217c-438f-a5bb-2150-7d066a3416e7' },
+        { id: 'jett', name: 'Jett', role: 'Duelist', winrate: '71.2%', uuid: 'ad8b151e-408d-f227-5185-5b7461c47a45' },
         { id: 'killjoy', name: 'Killjoy', role: 'Sentinel', winrate: '70.1%', uuid: '1e58de9c-4950-5125-9341-7c08ee7a0862' },
         { id: 'sova', name: 'Sova', role: 'Initiator', winrate: '68.4%', uuid: 'dad6947f-4b67-2403-acf8-3b952a957814' },
         { id: 'sage', name: 'Sage', role: 'Sentinel', winrate: '66.2%', uuid: '569fdd95-4d10-43ab-ca70-79becc718b46' }
@@ -66,9 +71,16 @@ let isLiveMode = false;
 let activeTab = 'all';
 let agentsList = []; // dynamic from valorant-api
 let selectedMap = 'Ascent';
+let selectedMode = 'competitive';
 let currentDraftSlot = 0; // index of player card currently targeted for manual pick (0-4)
 let livePregameMatchId = null;
 let currentIngameRound = 1;
+
+// Mode rules state variables
+let modeMaxPlayers = 5;
+let modeAllowBuy = true;
+let modeMaxRounds = 25;
+let modeSwapRound = 13;
 
 // 5 slots representing players (Simulator or Live)
 let myTeam = [
@@ -88,6 +100,7 @@ let ranksCache = {};
 
 // DOM Elements
 const mapSelect = document.getElementById('mapSelect');
+const modeSelect = document.getElementById('modeSelect');
 const connectionStatus = document.getElementById('connectionStatus');
 const connectionText = document.getElementById('connectionText');
 const teamList = document.getElementById('teamList');
@@ -229,6 +242,7 @@ function filterRole(roleName) {
         }
     });
     renderAgentsGrid();
+    renderRecommended(); // Keep AI recommendations list in sync with the selected role tab!
 }
 
 // Display details of currently selected agent
@@ -254,7 +268,7 @@ function selectAgent(agent) {
     selectionPortrait.style.display = 'block';
 
     selectionName.innerText = agent.displayName;
-    selectionRole.innerText = agent.role ? agent.role.displayName : 'ROLE UNKNOWN';
+    selectionRole.innerText = agent.role;
     selectionDesc.innerText = agent.description;
 
     // Load abilities
@@ -427,7 +441,7 @@ function renderTeam() {
         teamList.appendChild(card);
     });
 
-    teamCount.innerText = `${count} / 5 Picked`;
+    teamCount.innerText = `${count} / ${myTeam.length} Picked`;
 }
 
 function clearSlot(index) {
@@ -552,7 +566,27 @@ function renderRecommended() {
     recommendedPicks.innerHTML = '';
     const picks = MAP_RECOMMENDATIONS[selectedMap] || [];
 
-    picks.forEach((pick, index) => {
+    // Map each pick with its original index (1-based absolute rank)
+    const rankedPicks = picks.map((pick, idx) => ({ ...pick, originalRank: idx + 1 }));
+
+    // Filter picks by role if not 'all'
+    const filteredPicks = activeTab === 'all'
+        ? rankedPicks
+        : rankedPicks.filter(pick => pick.role && pick.role.toLowerCase() === activeTab);
+
+    if (filteredPicks.length === 0) {
+        const noPicksMsg = document.createElement('div');
+        noPicksMsg.style.fontSize = '10px';
+        noPicksMsg.style.color = 'var(--text-muted)';
+        noPicksMsg.style.textAlign = 'center';
+        noPicksMsg.style.padding = '20px 10px';
+        noPicksMsg.style.fontStyle = 'italic';
+        noPicksMsg.innerText = `No recommendations for ${activeTab}s on this map.`;
+        recommendedPicks.appendChild(noPicksMsg);
+        return;
+    }
+
+    filteredPicks.forEach((pick) => {
         const card = document.createElement('div');
 
         let avatarUrl = '';
@@ -583,7 +617,7 @@ function renderRecommended() {
         card.style.transition = 'all 0.2s';
 
         card.innerHTML = `
-            <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900; color: var(--color-cyan); width: 15px;">#${index + 1}</div>
+            <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 900; color: var(--color-cyan); width: 15px;">#${pick.originalRank}</div>
             <img src="${avatarUrl}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-cyber); object-fit: cover;" alt="${pick.name}">
             <div style="flex: 1;">
                 <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); text-transform: uppercase;">${pick.name}</div>
@@ -857,6 +891,29 @@ mapSelect.onchange = (e) => {
     updateSynergy();
 };
 
+// Change Mode dropdown listener
+if (modeSelect) {
+    modeSelect.onchange = (e) => {
+        selectedMode = e.target.value;
+        
+        const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
+        
+        // Call the secure JS function to update index.html rules dynamically
+        applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
+        
+        const modeRulesName = document.getElementById('modeRulesName');
+        if (modeRulesName) modeRulesName.innerText = preset.name;
+        
+        const modeRulesDesc = document.getElementById('modeRulesDesc');
+        if (modeRulesDesc) modeRulesDesc.innerText = preset.description;
+        
+        const ingameModeEl = document.getElementById('ingameMode');
+        if (ingameModeEl) ingameModeEl.innerText = selectedMode.toUpperCase();
+        
+        console.log(`Game mode changed to: ${selectedMode}`);
+    };
+}
+
 // Custom Timer Simulation
 let timerInterval = null;
 let timeLeft = 60;
@@ -930,7 +987,7 @@ function startSimulator() {
     setConnectionState('offline', 'Radar Offline (Sim)');
     switchView('pregame');
 
-    // Re-render empty team compostion
+    // Reset to baseline full team first
     myTeam = [
         { puuid: 'p1', name: 'Ally 1 (You)', agentId: null, state: '', level: 125, rank: 21, playerCardId: '' },
         { puuid: 'p2', name: 'Ally 2', agentId: null, state: '', level: 88, rank: 18, playerCardId: '' },
@@ -938,6 +995,16 @@ function startSimulator() {
         { puuid: 'p4', name: 'Ally 4', agentId: null, state: '', level: 41, rank: 17, playerCardId: '' },
         { puuid: 'p5', name: 'Ally 5', agentId: null, state: '', level: 195, rank: 22, playerCardId: '' }
     ];
+
+    // Trigger initial rules sync based on dropdown
+    selectedMode = modeSelect ? modeSelect.value : 'competitive';
+    const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['competitive'];
+    applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
+    
+    const modeRulesName = document.getElementById('modeRulesName');
+    if (modeRulesName) modeRulesName.innerText = preset.name;
+    const modeRulesDesc = document.getElementById('modeRulesDesc');
+    if (modeRulesDesc) modeRulesDesc.innerText = preset.description;
 
     currentDraftSlot = 0;
     renderTeam();
@@ -957,8 +1024,12 @@ function startIngameDemo() {
     const ingameMapEl = document.getElementById('ingameMap');
     if (ingameMapEl) ingameMapEl.innerText = selectedMap;
 
+    selectedMode = modeSelect ? modeSelect.value : 'competitive';
+    const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['competitive'];
+    applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
+
     const ingameModeEl = document.getElementById('ingameMode');
-    if (ingameModeEl) ingameModeEl.innerText = 'COMPETITIVE';
+    if (ingameModeEl) ingameModeEl.innerText = selectedMode.toUpperCase();
 
     document.getElementById('ingameRoundHeader').innerText = 'MATCH START | ROUND 1';
 
@@ -966,21 +1037,15 @@ function startIngameDemo() {
     document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.45), rgba(5, 8, 12, 0.55)), url('${splash}')`;
 
     // Trigger simulated recommendations
-    document.getElementById('ingameRecWeapon').innerText = 'PHANTOM';
+    document.getElementById('ingameRecWeapon').innerText = preset.canBuy ? 'PHANTOM' : 'RANDOM / FREE';
     document.getElementById('ingameRecAgent').innerText = 'JETT';
 
     const creditsInput = document.getElementById('ingameCreditsInput');
-    if (creditsInput) creditsInput.value = '3200';
+    if (creditsInput) creditsInput.value = preset.canBuy ? '3200' : '0';
 
     document.getElementById('ingameRecSide').innerText = 'ATTACKER';
 
-    document.getElementById('ingameBuyWeaponName').innerText = 'PHANTOM';
-    document.getElementById('ingameBuyWeaponCost').innerText = '(2900)';
-    document.getElementById('ingameBuyShieldName').innerText = 'LIGHT SHIELD';
-    document.getElementById('ingameBuyShieldCost').innerText = '(400)';
-    document.getElementById('ingameBuyAbilitiesName').innerText = 'DASH / SMOKE';
-    document.getElementById('ingameBuyAbilitiesCost').innerText = '(0)';
-    document.getElementById('ingameBuyTotalCost').innerText = '3300';
+    updateBuyRecommendations(creditsInput ? parseInt(creditsInput.value) || 0 : 0, 1);
 
     document.getElementById('ingameCoachText').innerText = "PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.";
     document.getElementById('ingameBuyTimerDigits').innerText = `00:30`;
@@ -1014,10 +1079,15 @@ function setConnectionState(state, text) {
     connectionText.innerText = text;
     isLiveMode = (state === 'live');
 
+    const sandboxCard = document.getElementById('sandboxControlsCard');
     if (isLiveMode) {
         mapSelect.disabled = true; // live client locks map selection
+        if (modeSelect) modeSelect.disabled = true;
+        if (sandboxCard) sandboxCard.style.display = 'none';
     } else {
         mapSelect.disabled = false;
+        if (modeSelect) modeSelect.disabled = false;
+        if (sandboxCard) sandboxCard.style.display = 'flex';
     }
 }
 
@@ -1050,6 +1120,20 @@ socket.on('valorant_status', (data) => {
             }
 
             renderRecommended();
+        }
+
+        // Set mode if available from live status
+        if (data.mode) {
+            selectedMode = data.mode.toLowerCase();
+            if (modeSelect) modeSelect.value = selectedMode;
+            
+            const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
+            applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
+            
+            const modeRulesName = document.getElementById('modeRulesName');
+            if (modeRulesName) modeRulesName.innerText = preset.name;
+            const modeRulesDesc = document.getElementById('modeRulesDesc');
+            if (modeRulesDesc) modeRulesDesc.innerText = preset.description;
         }
 
         // Map live player list
@@ -1085,7 +1169,19 @@ socket.on('valorant_status', (data) => {
             document.getElementById('viewIngame').style.backgroundImage = `linear-gradient(rgba(5, 8, 12, 0.55), rgba(5, 8, 12, 0.65)), url('${splash}')`;
         }
         if (data.mode) {
-            document.getElementById('ingameMode').innerText = data.mode;
+            selectedMode = data.mode.toLowerCase();
+            if (modeSelect) modeSelect.value = selectedMode;
+            
+            const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
+            applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
+            
+            const modeRulesName = document.getElementById('modeRulesName');
+            if (modeRulesName) modeRulesName.innerText = preset.name;
+            const modeRulesDesc = document.getElementById('modeRulesDesc');
+            if (modeRulesDesc) modeRulesDesc.innerText = preset.description;
+
+            const ingameModeEl = document.getElementById('ingameMode');
+            if (ingameModeEl) ingameModeEl.innerText = data.mode.toUpperCase();
         }
 
         // Map live player list
@@ -1151,6 +1247,26 @@ function updateBuyRecommendations(credits, round) {
     let sCost = 400;
     let aName = "FULL BUY";
     let aCost = 300;
+
+    if (!modeAllowBuy) {
+        // Economy disabled/Spike Rush/Deathmatch rules
+        wName = "RANDOM / FREE";
+        wCost = 0;
+        sName = "FREE SHIELD";
+        sCost = 0;
+        aName = "ABILITIES ACTIVE";
+        aCost = 0;
+        
+        document.getElementById('ingameBuyWeaponName').innerText = wName;
+        document.getElementById('ingameBuyWeaponCost').innerText = `(Free)`;
+        document.getElementById('ingameBuyShieldName').innerText = sName;
+        document.getElementById('ingameBuyShieldCost').innerText = `(Free)`;
+        document.getElementById('ingameBuyAbilitiesName').innerText = aName;
+        document.getElementById('ingameBuyAbilitiesCost').innerText = `(Free)`;
+        document.getElementById('ingameBuyTotalCost').innerText = '0';
+        document.getElementById('ingameRecWeapon').innerText = wName;
+        return;
+    }
 
     if (round === 1 || round === 13) {
         wName = "GHOST";
@@ -1300,7 +1416,7 @@ function getWeaponCost(name) {
     if (weapon === 'odin') return 3200;
     return 0;
 }
-
+/* NOT OFFICIAL INFO BY NOW */
 function renderMlBuyRecommendations(data) {
     if (!data || !data.buy_recommendations || data.buy_recommendations.length === 0) return;
 
@@ -1360,6 +1476,150 @@ function renderMlBuyRecommendations(data) {
             document.getElementById('ingameEnemyEcoRating').style.color = 'var(--color-green)';
         }
     }
+}
+
+// Game Mode presets mapping (parameters driven securely via JS function)
+const GAME_MODE_PRESETS = {
+    'competitive': {
+        name: 'Competitive',
+        playersCount: 5,
+        canBuy: true,
+        maxRounds: 25, // first to 13
+        description: 'Standard 5v5 competitive draft, credits buy active, halves swap at round 12.'
+    },
+    'unrated': {
+        name: 'Unrated',
+        playersCount: 5,
+        canBuy: true,
+        maxRounds: 25, // first to 13
+        description: 'Standard 5v5 unrated draft, credits buy active, halves swap at round 12.'
+    },
+    'swiftplay': {
+        name: 'Swiftplay',
+        playersCount: 5,
+        canBuy: true,
+        maxRounds: 9, // first to 5 (swap round = Math.ceil(9/2) = 5, after 4 rounds)
+        description: '5v5 compressed economy Swiftplay, halves swap at round 4 (Round 5 start).'
+    },
+    'spikerush': {
+        name: 'Spike Rush',
+        playersCount: 5,
+        canBuy: false, // random weapons
+        maxRounds: 7, // first to 4 (swap round = Math.ceil(7/2) = 4, after 3 rounds)
+        description: '5v5 Spike Rush, random weapons, buy phase disabled, halves swap at round 3 (Round 4 start).'
+    },
+    'deathmatch': {
+        name: 'Deathmatch',
+        playersCount: 1, // FFA
+        canBuy: false, // spawn with weapon
+        maxRounds: 1, // single round to 40 kills
+        description: 'Free-For-All Deathmatch (simulated 1 player), buy phase disabled, no abilities active.'
+    },
+    'escalation': {
+        name: 'Escalation',
+        playersCount: 5,
+        canBuy: false,
+        maxRounds: 1, // single round progression
+        description: '5v5 Escalation, weapon progression tiers, buy phase disabled, fast respawns.'
+    },
+    'custom': {
+        name: 'Custom Game',
+        playersCount: 5,
+        canBuy: true,
+        maxRounds: 25,
+        description: 'Custom game rules. Standard 5v5 configuration.'
+    }
+};
+
+// Main JS function to securely configure game mode rules and automatically update index.html
+function applyGameModeRules(playersCount, canBuy, maxRounds) {
+    // Force parameter types to prevent external client-side HTML manipulation
+    modeMaxPlayers = Number(playersCount);
+    modeAllowBuy = Boolean(canBuy);
+    modeMaxRounds = Number(maxRounds);
+    modeSwapRound = modeMaxRounds > 1 ? Math.ceil(modeMaxRounds / 2) : 0;
+
+    // Automatically update team capacity and layout slots
+    updateTeamSize(modeMaxPlayers);
+
+    // Update the index.html elements
+    const sizeEl = document.getElementById('modeRulesSize');
+    if (sizeEl) {
+        sizeEl.innerText = modeMaxPlayers === 1 ? '1 Player (FFA)' : `${modeMaxPlayers} Players`;
+    }
+
+    const buyEl = document.getElementById('modeRulesBuy');
+    if (buyEl) {
+        if (modeAllowBuy) {
+            buyEl.innerText = 'Buy Allowed';
+            buyEl.className = 'rules-badge-buy enabled';
+        } else {
+            buyEl.innerText = 'Buy Disabled';
+            buyEl.className = 'rules-badge-buy disabled';
+        }
+    }
+
+    const roundsEl = document.getElementById('modeRulesRounds');
+    if (roundsEl) {
+        if (modeSwapRound > 0) {
+            roundsEl.innerText = `Swap at Round ${modeSwapRound} (Max ${modeMaxRounds})`;
+        } else {
+            roundsEl.innerText = 'No Side Swap (1 round)';
+        }
+    }
+
+    // Update HUD economy controls
+    const creditsInput = document.getElementById('ingameCreditsInput');
+    if (creditsInput) {
+        creditsInput.disabled = !modeAllowBuy;
+        if (!modeAllowBuy) {
+            creditsInput.value = '0';
+            creditsInput.style.opacity = '0.5';
+            creditsInput.style.cursor = 'not-allowed';
+        } else {
+            creditsInput.style.opacity = '1';
+            creditsInput.style.cursor = 'text';
+            if (creditsInput.value === '0') {
+                creditsInput.value = '3900'; // Reset to standard buy creds
+            }
+        }
+    }
+
+    // Refresh buy recommendations if we are in game view
+    updateBuyRecommendations(creditsInput ? parseInt(creditsInput.value) || 0 : 0, currentIngameRound);
+}
+
+// Sandbox team size update helper
+function updateTeamSize(newSize) {
+    const currentSize = myTeam.length;
+    if (newSize < currentSize) {
+        // Shrink team
+        myTeam = myTeam.slice(0, newSize);
+        if (currentDraftSlot >= newSize) {
+            currentDraftSlot = newSize - 1;
+        }
+    } else if (newSize > currentSize) {
+        // Grow team
+        for (let i = currentSize; i < newSize; i++) {
+            myTeam.push({
+                puuid: `p${i + 1}`,
+                name: `Ally ${i + 1}`,
+                agentId: null,
+                state: '',
+                level: 100 + i * 20,
+                rank: 15 + i,
+                playerCardId: ''
+            });
+        }
+    }
+
+    // Update team count text: e.g. "0 / 3 Picked"
+    const pickedCount = myTeam.filter(p => p.agentId).length;
+    if (teamCount) teamCount.innerText = `${pickedCount} / ${myTeam.length} Picked`;
+
+    renderTeam();
+    renderAgentsGrid();
+    updateSynergy();
 }
 
 // Initialize application

@@ -426,6 +426,8 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
             );
 
             const mlDraftPicks = mlPred && mlPred.recommendations ? mlPred.recommendations : [];
+            const queueId = privateData.matchPresenceData?.queueId || "";
+            const mode = QUEUES_MAP[queueId] || "Competitive";
 
             this.updateStatus("PREGAME", {
               matchId,
@@ -434,12 +436,15 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
               mapName,
               myPuuid: puuid,
               mlDraftPicks,
+              mode,
             });
           } catch (error) {
             this.logger.error(
               `Error querying pregame selection details: ${error instanceof Error ? error.message : String(error)}`,
             );
-            this.updateStatus("PREGAME", { matchId, myPuuid: puuid });
+            const queueId = privateData.matchPresenceData?.queueId || "";
+            const mode = QUEUES_MAP[queueId] || "Competitive";
+            this.updateStatus("PREGAME", { matchId, myPuuid: puuid, mode });
           }
         } else if (loopState === "INGAME") {
           const mapPath = privateData.matchPresenceData?.matchMap || "";
@@ -507,7 +512,7 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
                   const decoded = Buffer.from(playerPresence.private, "base64").toString("utf8");
                   const presenceData = JSON.parse(decoded);
                   rank = presenceData.competitiveTier || 0;
-                } catch {}
+                } catch { }
               }
 
               return {
@@ -550,7 +555,9 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
           }
         } else {
           this.clearBuyPhase();
-          this.updateStatus("MENU");
+          const queueId = privateData.matchPresenceData?.queueId || "";
+          const mode = QUEUES_MAP[queueId] || "Competitive";
+          this.updateStatus("MENU", { mode });
         }
       } else {
         this.clearBuyPhase();
@@ -674,8 +681,7 @@ export class ValorantLocalService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (error) {
       this.logger.error(
-        `Error running ML prediction: ${
-          error instanceof Error ? error.message : String(error)
+        `Error running ML prediction: ${error instanceof Error ? error.message : String(error)
         }`,
       );
     }
