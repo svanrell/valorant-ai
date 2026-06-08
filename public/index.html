@@ -7,7 +7,9 @@
     <title>AGENT DRAFT COACH - LoadoutAi</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -56,20 +58,28 @@
     <!-- STATE 1: CLOSED / OFFLINE VIEW -->
     <div id="viewClosed" class="state-view active">
         <div class="cyber-panel offline-card">
-            <div class="pulse-red" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--color-red); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 0 15px var(--glow-red);">
+            <div class="pulse-red"
+                style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--color-red); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; box-shadow: 0 0 15px var(--glow-red);">
                 <span style="font-size: 30px; color: var(--color-red); font-weight: bold;">!</span>
             </div>
-            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span style="color: var(--color-red); text-shadow: 0 0 8px var(--glow-red);">OFFLINE</span></div>
+            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span
+                    style="color: var(--color-red); text-shadow: 0 0 8px var(--glow-red);">OFFLINE</span></div>
             <p style="color: var(--text-muted); font-size: 13px; line-height: 1.6;">
-                The local VALORANT client is not running. Please open the game to start live tactical mapping and draft recommendations.
+                The local VALORANT client is not running. Please open the game to start live tactical mapping and draft
+                recommendations.
             </p>
-            <div style="font-family: monospace; font-size: 11px; color: var(--color-cyan); background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 4px; border: 1px solid var(--border-cyber); width: 100%;">
+            <div
+                style="font-family: monospace; font-size: 11px; color: var(--color-cyan); background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 4px; border: 1px solid var(--border-cyber); width: 100%;">
                 [POLLING RADAR CLIENT GATEWAY...]
             </div>
-            <button class="lock-btn" style="background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2); width: 100%; margin-top: 10px;" onclick="startSimulator()">
+            <button class="lock-btn"
+                style="background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2); width: 100%; margin-top: 10px;"
+                onclick="startSimulator()">
                 LAUNCH OFFLINE SIMULATOR
             </button>
-            <button class="lock-btn" style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);" onclick="startIngameDemo()">
+            <button class="lock-btn"
+                style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);"
+                onclick="startIngameDemo()">
                 LAUNCH IN-GAME OVERLAY (HUD DEMO)
             </button>
         </div>
@@ -83,46 +93,71 @@
                 <div class="radar-ring"></div>
                 <div class="radar-ping-center"></div>
             </div>
-            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span style="color: var(--color-cyan); text-shadow: 0 0 8px var(--glow-cyan);">STANDBY</span></div>
+            <div class="logo-title" style="font-size: 18px; letter-spacing: 1px;">RADAR STATUS: <span
+                    style="color: var(--color-cyan); text-shadow: 0 0 8px var(--glow-cyan);">STANDBY</span></div>
             <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
                 Riot local client detected. You are currently in menus or queue. Searching for match...
             </p>
-            <button class="lock-btn" style="width: 100%; background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2);" onclick="startSimulator()">
+            <button class="lock-btn"
+                style="width: 100%; background-color: var(--color-cyan); box-shadow: 0 2px 10px rgba(0, 240, 255, 0.2);"
+                onclick="startSimulator()">
                 OPEN AGENT DRAFT COACH (SANDBOX)
             </button>
-            <button class="lock-btn" style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);" onclick="startIngameDemo()">
+            <button class="lock-btn"
+                style="width: 100%; background-color: var(--color-red); box-shadow: 0 2px 10px rgba(255, 70, 85, 0.2);"
+                onclick="startIngameDemo()">
                 LAUNCH IN-GAME OVERLAY (HUD DEMO)
             </button>
         </div>
-        
+
         <div class="cyber-panel lobby-cache-card">
-            <div class="panel-header" style="background: transparent; border-bottom: 1px solid var(--border-cyber); padding: 0 0 10px 0;">
+            <div class="panel-header"
+                style="background: transparent; border-bottom: 1px solid var(--border-cyber); padding: 0 0 10px 0;">
                 <span>Map Ingestion Cache</span>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; max-height: 250px; padding-right: 5px;">
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">ASCENT</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 24,192 matches</div>
+            <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; max-height: 250px; padding-right: 5px;">
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">
+                        ASCENT</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 24,192 matches
+                    </div>
                 </div>
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">BIND</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 18,944 matches</div>
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">BIND
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 18,944 matches
+                    </div>
                 </div>
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">HAVEN</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 15,200 matches</div>
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">HAVEN
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 15,200 matches
+                    </div>
                 </div>
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">SPLIT</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 12,832 matches</div>
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">SPLIT
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 12,832 matches
+                    </div>
                 </div>
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">BREEZE</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 9,412 matches</div>
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">
+                        BREEZE</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 9,412 matches
+                    </div>
                 </div>
-                <div style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
-                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">ICEBOX</div>
-                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 11,048 matches</div>
+                <div
+                    style="border: 1px solid var(--border-cyber); padding: 10px; border-radius: 4px; font-size: 11px; background: rgba(0,0,0,0.2);">
+                    <div style="font-family: 'Orbitron', sans-serif; font-weight: bold; color: var(--color-cyan);">
+                        ICEBOX</div>
+                    <div style="color: var(--text-muted); font-size: 9px; margin-top: 3px;">Aggregated: 11,048 matches
+                    </div>
                 </div>
             </div>
         </div>
@@ -146,10 +181,11 @@
             <div class="ai-rec-grid">
                 <!-- AI Synergy Gauge Card -->
                 <div class="cyber-panel synergy-card">
-                    <div class="panel-header" style="width:100%; border-bottom: none; background: transparent; padding: 0 0 15px 0;">
+                    <div class="panel-header"
+                        style="width:100%; border-bottom: none; background: transparent; padding: 0 0 15px 0;">
                         <span>Team Synergy Analyzer</span>
                     </div>
-                    
+
                     <div class="synergy-gauge-container">
                         <svg width="140" height="80" viewBox="0 0 140 80">
                             <path class="synergy-ring-bg" d="M 15,75 A 55,55 0 0,1 125,75" />
@@ -189,17 +225,18 @@
                 <div class="panel-header">
                     <span>AI Map Intelligence</span>
                 </div>
-                <div class="map-intel-container" style="display: flex; flex: 1; overflow: hidden; height: calc(100% - 37px);">
+                <div class="map-intel-container"
+                    style="display: flex; flex: 1; overflow: hidden; height: calc(100% - 37px);">
                     <!-- Left: Recommendations -->
-                    <div style="flex: 1.2; border-right: 1px solid var(--border-cyber); display: flex; flex-direction: column; padding: 12px; height: 100%;">
-                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Recommended Picks</div>
-                        <div id="recommendedPicks" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding-right: 4px;">
+                    <div
+                        style="flex: 1.2; border-right: 1px solid var(--border-cyber); display: flex; flex-direction: column; padding: 12px; height: 100%;">
+                        <div
+                            style="font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+                            Recommended Picks</div>
+                        <div id="recommendedPicks"
+                            style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; padding-right: 4px;">
                             <!-- Injected by JS -->
                         </div>
-                    </div>
-                    <!-- Right: Map Tactical Stats -->
-                    <div id="mapTacticalStats" style="flex: 1; display: flex; flex-direction: column; padding: 12px; justify-content: space-between; height: 100%;">
-                        <!-- Injected by JS based on map -->
                     </div>
                 </div>
             </div>
@@ -210,7 +247,7 @@
             <div class="panel-header">
                 <span>Select Hero Agent</span>
             </div>
-            
+
             <div class="tabs-header">
                 <button class="tab-btn active" onclick="filterRole('all')">All</button>
                 <button class="tab-btn" onclick="filterRole('duelist')">Duelists</button>
@@ -240,7 +277,8 @@
                     <div class="selection-info-header">
                         <div id="selectionName" class="selection-name">Select Agent</div>
                         <div id="selectionRole" class="selection-role">Class Role</div>
-                        <div id="selectionDesc" class="selection-desc">Hover or click a character in the grid to view details, tactical stats, and load abilities.</div>
+                        <div id="selectionDesc" class="selection-desc">Hover or click a character in the grid to view
+                            details, tactical stats, and load abilities.</div>
                     </div>
 
                     <div id="selectionAbilities" class="selection-abilities-row">
@@ -265,100 +303,148 @@
         <div class="hud-col-left">
             <!-- STRAT AI Recommendation Card -->
             <div class="hud-panel hud-panel-left">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 10px;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-cyber); padding-bottom: 10px;">
                     <div>
-                        <div style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); letter-spacing: 1px;">STRAT AI - <span id="ingameMap">Ascent</span></div>
+                        <div
+                            style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); letter-spacing: 1px;">
+                            STRAT AI - <span id="ingameMap">Ascent</span></div>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <span id="ingameRoundHeader" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MATCH START | ROUND 1</span>
-                            <span id="ingameMode" style="font-size: 9px; color: var(--color-cyan); font-family: 'Orbitron', sans-serif; font-weight: 700; text-transform: uppercase;">COMPETITIVE</span>
+                            <span id="ingameRoundHeader"
+                                style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">MATCH
+                                START | ROUND 1</span>
+                            <span id="ingameMode"
+                                style="font-size: 9px; color: var(--color-cyan); font-family: 'Orbitron', sans-serif; font-weight: 700; text-transform: uppercase;">COMPETITIVE</span>
                         </div>
                     </div>
-                    <div id="ingameBuyTimerDigits" style="font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--color-cyan); text-shadow: 0 0 6px var(--glow-cyan);">00:00</div>
+                    <div id="ingameBuyTimerDigits"
+                        style="font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 700; color: var(--color-cyan); text-shadow: 0 0 6px var(--glow-cyan);">
+                        00:00</div>
                 </div>
-                
+
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">
                     <div>
-                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Recommendation</div>
-                        <div id="ingameRecWeapon" style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--color-cyan); text-transform: uppercase;">PHANTOM</div>
+                        <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Recommendation
+                        </div>
+                        <div id="ingameRecWeapon"
+                            style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--color-cyan); text-transform: uppercase;">
+                            PHANTOM</div>
                     </div>
                     <div style="text-align: right;">
                         <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Agent</div>
-                        <div id="ingameRecAgent" style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); text-transform: uppercase;">JETT</div>
+                        <div id="ingameRecAgent"
+                            style="font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: var(--text-main); text-transform: uppercase;">
+                            JETT</div>
                     </div>
                     <div>
                         <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Creds</div>
-                        <input type="number" id="ingameCreditsInput" value="3900" min="0" max="9000" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-cyber); color: var(--color-yellow); font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; width: 80px; padding: 2px 5px; outline: none; border-radius: 4px;">
+                        <input type="number" id="ingameCreditsInput" value="3900" min="0" max="9000"
+                            style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-cyber); color: var(--color-yellow); font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; width: 80px; padding: 2px 5px; outline: none; border-radius: 4px;">
                     </div>
                     <div style="text-align: right;">
                         <div style="color: var(--text-muted); text-transform: uppercase; font-size: 9px;">Side</div>
-                        <div id="ingameRecSide" style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: var(--color-red);">ATTACKER</div>
+                        <div id="ingameRecSide"
+                            style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700; color: var(--color-red);">
+                            ATTACKER</div>
                     </div>
                 </div>
 
                 <!-- Buy Item Details -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border-top: 1px solid var(--border-cyber); padding-top: 15px; text-align: center;">
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                <div
+                    style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border-top: 1px solid var(--border-cyber); padding-top: 15px; text-align: center;">
+                    <div
+                        style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
                         <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Weapon</div>
-                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
-                            <svg width="36" height="18" viewBox="0 0 36 18" fill="none" stroke="var(--text-main)" stroke-width="1.5">
-                                <path d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
+                        <div
+                            style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="36" height="18" viewBox="0 0 36 18" fill="none" stroke="var(--text-main)"
+                                stroke-width="1.5">
+                                <path
+                                    d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
                             </svg>
                         </div>
-                        <div id="ingameBuyWeaponName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">PHANTOM</div>
+                        <div id="ingameBuyWeaponName"
+                            style="font-size: 10px; font-weight: bold; text-transform: uppercase;">PHANTOM</div>
                         <div id="ingameBuyWeaponCost" style="font-size: 8px; color: var(--text-muted);">(2900)</div>
                     </div>
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                    <div
+                        style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
                         <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Shield</div>
-                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="1.5">
+                        <div
+                            style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)"
+                                stroke-width="1.5">
                                 <path d="M 12,2 L 4,5 L 4,12 C 4,17 7.5,21 12,22 C 16.5,21 20,17 20,12 L 20,5 Z" />
                             </svg>
                         </div>
-                        <div id="ingameBuyShieldName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">LIGHT SHIELD</div>
+                        <div id="ingameBuyShieldName"
+                            style="font-size: 10px; font-weight: bold; text-transform: uppercase;">LIGHT SHIELD</div>
                         <div id="ingameBuyShieldCost" style="font-size: 8px; color: var(--text-muted);">(400)</div>
                     </div>
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
-                        <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Abilities</div>
-                        <div style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" stroke-width="1.5">
+                    <div
+                        style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-cyber); padding: 8px; border-radius: 4px;">
+                        <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Abilities
+                        </div>
+                        <div
+                            style="height: 32px; display: flex; align-items: center; justify-content: center; margin: 5px 0;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)"
+                                stroke-width="1.5">
                                 <circle cx="12" cy="12" r="10" />
                                 <path d="M 12,2 L 12,22 M 2,12 L 22,12" />
                             </svg>
                         </div>
-                        <div id="ingameBuyAbilitiesName" style="font-size: 10px; font-weight: bold; text-transform: uppercase;">DASH / SMOKE</div>
+                        <div id="ingameBuyAbilitiesName"
+                            style="font-size: 10px; font-weight: bold; text-transform: uppercase;">DASH / SMOKE</div>
                         <div id="ingameBuyAbilitiesCost" style="font-size: 8px; color: var(--text-muted);">(0)</div>
                     </div>
                 </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-cyber); padding-top: 10px; font-size: 12px; font-weight: bold;">
-                    <span style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Total Cost</span>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-cyber); padding-top: 10px; font-size: 12px; font-weight: bold;">
+                    <span style="color: var(--text-muted); font-size: 10px; text-transform: uppercase;">Total
+                        Cost</span>
                     <span id="ingameBuyTotalCost" style="color: var(--color-cyan);">3200</span>
                 </div>
-                
-                <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-top: 5px;">
-                    <div id="ingameBuyTimerBar" style="height: 100%; width: 100%; background: var(--color-cyan); transition: width 1s linear;"></div>
+
+                <div
+                    style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-top: 5px;">
+                    <div id="ingameBuyTimerBar"
+                        style="height: 100%; width: 100%; background: var(--color-cyan); transition: width 1s linear;">
+                    </div>
                 </div>
             </div>
 
             <!-- ENEMY ECONOMY PREDICTION -->
             <div class="hud-panel hud-panel-left">
-                <div style="font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
+                <div
+                    style="font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
                     ENEMY ECONOMY PREDICTION
                 </div>
                 <div>
-                    <div id="ingameEnemyEcoEstimateRound" style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Round 1 Estimate</div>
-                    <div id="ingameEnemyEcoCreds" style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: bold; color: var(--color-cyan); margin-top: 3px;">AVG CREDS: 2800</div>
+                    <div id="ingameEnemyEcoEstimateRound"
+                        style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Round 1 Estimate
+                    </div>
+                    <div id="ingameEnemyEcoCreds"
+                        style="font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: bold; color: var(--color-cyan); margin-top: 3px;">
+                        AVG CREDS: 2800</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid var(--border-cyber);">
-                    <svg width="28" height="14" viewBox="0 0 36 18" fill="none" stroke="var(--color-cyan)" stroke-width="1.5">
-                        <path d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
+                <div
+                    style="display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border: 1px solid var(--border-cyber);">
+                    <svg width="28" height="14" viewBox="0 0 36 18" fill="none" stroke="var(--color-cyan)"
+                        stroke-width="1.5">
+                        <path
+                            d="M 2,12 L 8,12 L 10,7 L 34,7 L 34,10 L 30,10 L 28,12 L 20,12 L 19,15 L 17,15 L 18,12 L 10,12 L 9,15 L 6,15 Z" />
                     </svg>
                     <div style="flex: 1;">
-                        <div id="ingameEnemyEcoLoadout" style="font-size: 11px; font-weight: bold; color: var(--text-main);">VANDAL / LIGHT SHIELD</div>
-                        <div id="ingameEnemyEcoDesc" style="font-size: 9px; color: var(--text-muted);">Light buy with ability spread</div>
+                        <div id="ingameEnemyEcoLoadout"
+                            style="font-size: 11px; font-weight: bold; color: var(--text-main);">VANDAL / LIGHT SHIELD
+                        </div>
+                        <div id="ingameEnemyEcoDesc" style="font-size: 9px; color: var(--text-muted);">Light buy with
+                            ability spread</div>
                     </div>
                 </div>
-                <div id="ingameEnemyEcoRating" style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; color: var(--color-yellow); letter-spacing: 1px; text-transform: uppercase;">
+                <div id="ingameEnemyEcoRating"
+                    style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; color: var(--color-yellow); letter-spacing: 1px; text-transform: uppercase;">
                     ECO (Pistol/Light Buy)
                 </div>
             </div>
@@ -373,8 +459,11 @@
                     </svg>
                 </div>
                 <div class="hud-panel-coach-content">
-                    <div style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; color: var(--color-cyan); letter-spacing: 1.5px; text-transform: uppercase;">LIVE COACH TIP</div>
-                    <p id="ingameCoachText" style="font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.4;">
+                    <div
+                        style="font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 900; color: var(--color-cyan); letter-spacing: 1.5px; text-transform: uppercase;">
+                        LIVE COACH TIP</div>
+                    <p id="ingameCoachText"
+                        style="font-size: 11px; font-weight: 600; color: var(--text-main); line-height: 1.4;">
                         PUSH B SITE VIA LONG; SMOKE DEFENDERS. PEEK CAREFULLY.
                     </p>
                 </div>
@@ -385,63 +474,89 @@
         <div class="hud-col-right">
             <!-- ULT TRACKER -->
             <div class="hud-panel hud-panel-right">
-                <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
+                <div
+                    style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; border-bottom: 1px solid var(--border-cyber); padding-bottom: 8px;">
                     ULT TRACKER
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;">
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
                             <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="28.25" stroke-linecap="round" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)"
+                                    stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3"
+                                    stroke-dasharray="94.2" stroke-dashoffset="28.25" stroke-linecap="round" />
                             </svg>
-                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
-                                <img id="ultAgentHead1" src="https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Jett">
+                            <div
+                                style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead1"
+                                    src="https://media.valorant-api.com/agents/ad8b151e-408d-f227-5185-5b7461c47a45/displayicon.png"
+                                    style="width: 100%; height: 100%; object-fit: cover;" alt="Jett">
                             </div>
                         </div>
                         <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">70%</div>
                     </div>
-                    
+
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
                             <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="9.42" stroke-linecap="round" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)"
+                                    stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3"
+                                    stroke-dasharray="94.2" stroke-dashoffset="9.42" stroke-linecap="round" />
                             </svg>
-                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
-                                <img id="ultAgentHead2" src="https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Reyna">
+                            <div
+                                style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead2"
+                                    src="https://media.valorant-api.com/agents/a3db83f8-4a55-398d-aa10-09a547d8cda5/displayicon.png"
+                                    style="width: 100%; height: 100%; object-fit: cover;" alt="Reyna">
                             </div>
                         </div>
                         <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">90%</div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
                             <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="42.39" stroke-linecap="round" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)"
+                                    stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3"
+                                    stroke-dasharray="94.2" stroke-dashoffset="42.39" stroke-linecap="round" />
                             </svg>
-                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
-                                <img id="ultAgentHead3" src="https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Omen">
+                            <div
+                                style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead3"
+                                    src="https://media.valorant-api.com/agents/8e253930-4c05-31dd-1b6c-968525494517/displayicon.png"
+                                    style="width: 100%; height: 100%; object-fit: cover;" alt="Omen">
                             </div>
                         </div>
                         <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">55%</div>
                     </div>
 
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-                        <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                        <div
+                            style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
                             <svg width="48" height="48" viewBox="0 0 36 36" style="transform: rotate(-90deg);">
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)" stroke-width="3" />
-                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3" stroke-dasharray="94.2" stroke-dashoffset="84.78" stroke-linecap="round" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(21, 34, 50, 0.8)"
+                                    stroke-width="3" />
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-cyan)" stroke-width="3"
+                                    stroke-dasharray="94.2" stroke-dashoffset="84.78" stroke-linecap="round" />
                             </svg>
-                            <div style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
-                                <img id="ultAgentHead4" src="https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png" style="width: 100%; height: 100%; object-fit: cover;" alt="Killjoy">
+                            <div
+                                style="position: absolute; width: 28px; height: 28px; border-radius: 50%; overflow: hidden; background: #000; border: 1px solid var(--border-cyber);">
+                                <img id="ultAgentHead4"
+                                    src="https://media.valorant-api.com/agents/1e58de9c-4950-5125-9341-7c08ee7a0862/displayicon.png"
+                                    style="width: 100%; height: 100%; object-fit: cover;" alt="Killjoy">
                             </div>
                         </div>
                         <div style="font-size: 10px; font-weight: bold; color: var(--text-main);">10%</div>
                     </div>
                 </div>
-                <div style="font-size: 8px; color: var(--text-muted); text-align: center; text-transform: uppercase;">ULT (Press 'X')</div>
+                <div style="font-size: 8px; color: var(--text-muted); text-align: center; text-transform: uppercase;">
+                    ULT (Press 'X')</div>
             </div>
         </div>
     </div>
@@ -453,7 +568,8 @@
             <button class="buy-overlay-close" onclick="hideBuyOverlay()">&times;</button>
         </div>
         <div id="buyOverlayText" class="buy-details">
-            <strong>AI Buy recommendation:</strong> Loading buy strategy recommendation based on current credit economy...
+            <strong>AI Buy recommendation:</strong> Loading buy strategy recommendation based on current credit
+            economy...
         </div>
         <div class="buy-timer-bar-bg">
             <div id="buyOverlayTimerBar" class="buy-timer-bar-fill"></div>
