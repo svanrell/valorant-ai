@@ -895,21 +895,21 @@ mapSelect.onchange = (e) => {
 if (modeSelect) {
     modeSelect.onchange = (e) => {
         selectedMode = e.target.value;
-        
+
         const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
-        
+
         // Call the secure JS function to update index.html rules dynamically
         applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
-        
+
         const modeRulesName = document.getElementById('modeRulesName');
         if (modeRulesName) modeRulesName.innerText = preset.name;
-        
+
         const modeRulesDesc = document.getElementById('modeRulesDesc');
         if (modeRulesDesc) modeRulesDesc.innerText = preset.description;
-        
+
         const ingameModeEl = document.getElementById('ingameMode');
         if (ingameModeEl) ingameModeEl.innerText = selectedMode.toUpperCase();
-        
+
         console.log(`Game mode changed to: ${selectedMode}`);
     };
 }
@@ -1000,7 +1000,7 @@ function startSimulator() {
     selectedMode = modeSelect ? modeSelect.value : 'competitive';
     const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['competitive'];
     applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
-    
+
     const modeRulesName = document.getElementById('modeRulesName');
     if (modeRulesName) modeRulesName.innerText = preset.name;
     const modeRulesDesc = document.getElementById('modeRulesDesc');
@@ -1126,10 +1126,10 @@ socket.on('valorant_status', (data) => {
         if (data.mode) {
             selectedMode = data.mode.toLowerCase();
             if (modeSelect) modeSelect.value = selectedMode;
-            
+
             const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
             applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
-            
+
             const modeRulesName = document.getElementById('modeRulesName');
             if (modeRulesName) modeRulesName.innerText = preset.name;
             const modeRulesDesc = document.getElementById('modeRulesDesc');
@@ -1171,10 +1171,10 @@ socket.on('valorant_status', (data) => {
         if (data.mode) {
             selectedMode = data.mode.toLowerCase();
             if (modeSelect) modeSelect.value = selectedMode;
-            
+
             const preset = GAME_MODE_PRESETS[selectedMode] || GAME_MODE_PRESETS['custom'];
             applyGameModeRules(preset.playersCount, preset.canBuy, preset.maxRounds);
-            
+
             const modeRulesName = document.getElementById('modeRulesName');
             if (modeRulesName) modeRulesName.innerText = preset.name;
             const modeRulesDesc = document.getElementById('modeRulesDesc');
@@ -1256,7 +1256,7 @@ function updateBuyRecommendations(credits, round) {
         sCost = 0;
         aName = "ABILITIES ACTIVE";
         aCost = 0;
-        
+
         document.getElementById('ingameBuyWeaponName').innerText = wName;
         document.getElementById('ingameBuyWeaponCost').innerText = `(Free)`;
         document.getElementById('ingameBuyShieldName').innerText = sName;
@@ -1531,7 +1531,7 @@ const GAME_MODE_PRESETS = {
     }
 };
 
-// Main JS function to securely configure game mode rules and automatically update index.html
+// Main JS function to securely configure game mode rules and automatically update index.html (THIS HAS TO BE CHANGED, TO MAKE SURE THE RULES FROM THE GAME ARE APPLIED CORRECTLY)
 function applyGameModeRules(playersCount, canBuy, maxRounds) {
     // Force parameter types to prevent external client-side HTML manipulation
     modeMaxPlayers = Number(playersCount);
